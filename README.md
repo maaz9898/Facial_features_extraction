@@ -37,16 +37,19 @@ Just go to the repository or go to the project folder and open this file and you
 To run this you could put this complete code in google colab to save your time.
 In Google Colab cloud
 ```bash
-  !python Facial_features_extraction.py -input test2.jpg 
+  !python Facial_features_extraction.py -input Test_data/Test1.jpg -face_ori True
 ```
-Or open face_segmentation.py file in CLI as mentioned below.
+Or open Facial_features_extraction.py  file in CLI as mentioned below.
 In local machine
 ```bash
-  python Facial_features_extraction.py -input test2.jpg 
+  python Facial_features_extraction.py -input Test_data/Test2.jpg -face_ori True
 ```
 There is Test_data folder where testing images are available.
--input argument takes the image directory.
--output argument takes the output of the image directory.
+
+- First arguement takes image in '-input' argument takes the image directory.
+- Second arguement takes True value for storing face Direction(orientation).
+argument takes the True value in'-face_ori'. But it is optional arguement. 
+
 Facial_features_extraction.py will generate json file like, facial_features.json
 if input image has two faces or many facial features, so Facial_features_extraction.py will extract the faciall features and store into json file. 
 facial_features.json
