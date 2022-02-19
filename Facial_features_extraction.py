@@ -15,7 +15,7 @@ def euclidean_distance(leftx,lefty, rightx, righty):
 def midpoint(p1x,p1y ,p2x,p2y):
   return int((p1x + p2x)/2), int((p1y + p2y)/2)
 
-def save_features(results):
+def save_features(results,face_ori='False'):
   data = {}
 
   if results.multi_face_landmarks != None:
@@ -69,13 +69,38 @@ def save_features(results):
                                                 int((facial_landmarks.landmark[10].y) * wid))) - 180), 0))
       # print(int(angleh))
       #print('Hat features have been save to facial_features.json')
-      data['Left_eye' + str(i + 1)] = {'rotation': anglel, 'width': width_l, 'height': height_l,
+      data['Left_eye_' + str(i + 1)] = {'rotation': anglel, 'width': width_l, 'height': height_l,
                                        'center': mid_of_left_eye}
-      data['Right_eye' + str(i + 1)] = {'rotation': angler, 'width': width_r, 'height': height_r,
+      data['Right_eye_' + str(i + 1)] = {'rotation': angler, 'width': width_r, 'height': height_r,
                                         'center': mid_of_right_eye}
 
-      data['Hat' + str(i + 1)] = {'rotation': angleh, 'center': hat_center}
+      data['Hat_' + str(i + 1)] = {'rotation': angleh, 'center': hat_center}
+      if face_ori == 'True':
+          #print('openned',face_ori)
+          # finding the face center and left most and right co ordinates
+          face_l = [int((facial_landmarks.landmark[93].x) * wid), int((facial_landmarks.landmark[93].y) * hei)]
+          face_c = [int((facial_landmarks.landmark[5].x) * wid), int((facial_landmarks.landmark[5].y) * hei)]
+          face_r = [int((facial_landmarks.landmark[323].x) * wid), int((facial_landmarks.landmark[323].y) * hei)]
+          left2cen_dis = int(euclidean_distance(face_l[0], face_l[1], face_c[0], face_c[1]))
+          right2cen_dis = int(euclidean_distance(face_r[0], face_r[1], face_c[0], face_c[1]))
+          # print('left 2 center distance ',left2cen_dis)
+          # print('right 2 center distance ',right2cen_dis)
+          diff = abs(left2cen_dis - right2cen_dis)
+          if diff > 50:
+              if left2cen_dis > right2cen_dis:
+                  pos = 'Left'
+              elif right2cen_dis > left2cen_dis:
+                  pos = 'right'
+              else:
+                  pos = 'center'
+          else:
+              pos = 'center'
+          data['Face_ori_' + str(i + 1)] = {'Face_orientation': pos}
+
       i += 1
+
+
+
 
   #print(data)
   out_file = open("facial_features.json", "w")
@@ -104,7 +129,8 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument("-input",
 	help="input_image")
-
+parser.add_argument("-face_ori",
+	help="True for adding face orientation")
 # Indicate end of argument definitions and parse args
 #args = parser.parse_args()
 args = vars(parser.parse_args())
@@ -116,8 +142,8 @@ image = org.copy()
 imageb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 results = face.process(imageb)
 hei, wid, _ = image.shape
-save_features(results)
+save_features(results,args['face_ori'])
 
 
 #
-# python Facial_features_extraction.py -input Test1.jpg
+# python Facial_features_extraction.py -input Test_data/Test1.jpg -face_ori True
