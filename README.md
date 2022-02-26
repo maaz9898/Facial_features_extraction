@@ -54,5 +54,9 @@ Facial_features_extraction.py will generate json file like, facial_features.json
 if input image has two faces or many facial features, so Facial_features_extraction.py will extract the faciall features and store into json file. 
 facial_features.json
 
-
+**(NEW)**  
+By using the same -input command line argument, the user can now provide a directory path to perform feature extraction on all images inside it at once. 
+```bash
+  python Facial_features_extraction.py -input Test_data/ -face_ori True
+```
 
