@@ -9,7 +9,6 @@ class FeatureExtractor:
         self.img = image
         self.__results = []  # Mediapipe output
         self.__features = {}  # A dictionary to store features
-        self.__face = mediapipe.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=6, min_detection_confidence=0.5)
 
     # Compress input image to a certain percentage (Default is 30%)
     def __compressImg(self, percentage=0.3):
@@ -30,7 +29,9 @@ class FeatureExtractor:
 
         formattedImg = cv2.cvtColor(copiedImg, cv2.COLOR_BGR2RGB)
 
-        self.__results = self.__face.process(formattedImg)  # Run the FaceMesh module from Mediapipe on the preprocessed image
+        face = mediapipe.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=6, min_detection_confidence=0.5)
+
+        self.__results = face.process(formattedImg)  # Run the FaceMesh module from Mediapipe on the preprocessed image
 
         return formattedImg.shape
 
