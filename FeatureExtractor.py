@@ -50,7 +50,7 @@ class FeatureExtractor:
         return int((pt1.x*width + pt2.x*width)/2), int((pt1.y*height + pt2.y*height)/2)
 
     # Main method that extracts different features
-    def extractFeatures(self, faceOrient, extractMouth=False, compress=True):
+    def extractFeatures(self, faceOrient, extractMouth, compress=True):
         """ 
         A quick guide to different features IDs
 
@@ -146,6 +146,8 @@ class FeatureExtractor:
                     mouthW = self.__calcDistance(landmarks[61], landmarks[291], width, height)  # Width
                     mouthH = self.__calcDistance(landmarks[0], landmarks[17], width, height)  # Height
                     mouthCenter = self.__midpoint(landmarks[13], landmarks[14], width, height)  # Center
+
+                    # Update the features dictionary
                     self.__features['Mouth' + str(counter + 1)] = {'Center': mouthCenter, 'width': mouthW, 'height': mouthH}
 
                 counter += 1

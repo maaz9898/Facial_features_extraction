@@ -9,8 +9,8 @@ def main():
     # Define the argument parser along with the arguments
     parser = argparse.ArgumentParser()
     parser.add_argument("-input", help="Input image or directory")
-    parser.add_argument("-face_orient", default=False, help="True for adding face orientation")
-    parser.add_argument("-mouth", default=False, help="True for adding mouth extraction")
+    parser.add_argument("-face_orient", default=True, help="True for adding face orientation")
+    parser.add_argument("-mouth", default=True, help="True for adding mouth extraction")
     args = vars(parser.parse_args())
 
     # Apply feature extraction on a whole directory
