@@ -50,7 +50,7 @@ class FeatureExtractor:
         return int((pt1.x*width + pt2.x*width)/2), int((pt1.y*height + pt2.y*height)/2)
 
     # Main method that extracts different features
-    def extractFeatures(self, faceOrient, compress=True):
+    def extractFeatures(self, faceOrient, extractMouth=False, compress=True):
         """ 
         A quick guide to different features IDs
 
@@ -67,6 +67,13 @@ class FeatureExtractor:
         Face Center Point --> 5
         Face Left Point --> 93
         Face Right Point --> 323
+
+        Mouth Left Point --> 61
+        Mouth Right Point --> 291
+        Upper Lip Upper Point --> 0
+        Upper Lip Lower Point --> 13
+        Lower Lip Upper Point --> 14
+        Lower Lip Lower Point --> 17
 
         Hat Center --> 10
         """
@@ -93,7 +100,7 @@ class FeatureExtractor:
                 """ Right Eye Attributes """
                 rightEyeW = self.__calcDistance(landmarks[463], landmarks[359], width, height)  # Width
                 rightEyeH = self.__calcDistance(landmarks[257], landmarks[253], width, height)  # Height
-                rightEyeMid = self.__midpoint(landmarks[257], landmarks[253], width, height)  #Midpoint
+                rightEyeMid = self.__midpoint(landmarks[257], landmarks[253], width, height)  # Midpoint
 
                 rightEyeDX = int((landmarks[463].x) * width) - int((landmarks[359].x) * width)
                 rightEyeDY = int((landmarks[463].y) * height) - int((landmarks[359].y) * height)
@@ -134,6 +141,12 @@ class FeatureExtractor:
 
                     # Update the features dictionary
                     self.__features['Face_ori_' + str(counter + 1)] = {'Face_orientation': pos}
+
+                if extractMouth:
+                    mouthW = self.__calcDistance(landmarks[61], landmarks[291], width, height)  # Width
+                    mouthH = self.__calcDistance(landmarks[0], landmarks[17], width, height)  # Height
+                    mouthCenter = self.__midpoint(landmarks[13], landmarks[14], width, height)  # Center
+                    self.__features['Mouth' + str(counter + 1)] = {'Center': mouthCenter, 'width': mouthW, 'height': mouthH}
 
                 counter += 1
             

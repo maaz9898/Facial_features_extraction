@@ -10,6 +10,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-input", help="Input image or directory")
     parser.add_argument("-face_orient", default=False, help="True for adding face orientation")
+    parser.add_argument("-mouth", default=False, help="True for adding mouth extraction")
     args = vars(parser.parse_args())
 
     # Apply feature extraction on a whole directory
@@ -20,7 +21,7 @@ def main():
             
             FExtractor = FeatureExtractor(image)  # Create a FeatureExtractor object
 
-            features = FExtractor.extractFeatures(args['face_orient'])  # Call the extractFeatures() method
+            features = FExtractor.extractFeatures(args['face_orient'], args['mouth'])  # Call the extractFeatures() method
 
             writePath = args['input'] + imgPath.split('.')[0] + '.json'  # Specify the path to write .json to
             out_file = open(writePath, "w")  # Create .json file with writing privilege
@@ -34,7 +35,7 @@ def main():
         image = cv2.imread(args['input'])  # Read the input image
         FExtractor = FeatureExtractor(image)  # Create a FeatureExtractor object
 
-        features = FExtractor.extractFeatures(args['face_orient'])  # Call the extractFeatures() method
+        features = FExtractor.extractFeatures(args['face_orient'], args['mouth'])  # Call the extractFeatures() method
 
         writePath = args['input'].split('.')[0] + '.json'  # Specify the path to write .json to
         out_file = open(writePath, "w")  # Create .json file with writing privilege
