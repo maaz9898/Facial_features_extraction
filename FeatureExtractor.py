@@ -1,6 +1,8 @@
 import cv2
 import mediapipe
 import numpy as np
+import skimage.exposure
+from models.parser import face_parser
 
 "A class that encapsulates all functionalities needed"
 class FeatureExtractor:
@@ -48,6 +50,7 @@ class FeatureExtractor:
     # Helper function
     def __midpoint(self, pt1 , pt2, width, height):
         return int((pt1.x*width + pt2.x*width)/2), int((pt1.y*height + pt2.y*height)/2)
+
 
     # Main method that extracts different features
     def extractFeatures(self, faceOrient, extractMouth, compress=True):
@@ -153,3 +156,103 @@ class FeatureExtractor:
                 counter += 1
             
             return self.__features
+
+
+    # Helper function
+    def __resizeImage(self, im, max_size=768):
+        if np.max(im.shape) > max_size:
+            ratio = max_size / np.max(im.shape)
+            return cv2.resize(im, (0,0), fx=ratio, fy=ratio)
+
+        return im
+
+
+    # Returns a list of all faces detected
+    def __detectFace(self, images):
+        faces = []
+        prs = face_parser.FaceParser()
+
+        for image in images:
+            # Resize image
+            image = self.__resizeImage(image)
+
+            output_image = image.copy()
+
+            segmentation_output = prs.parse_face(image)[0]
+
+            binary_mask = np.ones(shape=[segmentation_output.shape[0],segmentation_output.shape[1]]) * 255
+            binary_mask[segmentation_output==16] = 0
+            binary_mask[segmentation_output==15] = 0
+            binary_mask[segmentation_output==14] = 0
+            binary_mask[segmentation_output==0] = 0
+
+            # blur alpha channel
+            binary_mask = cv2.GaussianBlur(binary_mask, (0,0), sigmaX=2, sigmaY=2, borderType = cv2.BORDER_DEFAULT)
+
+            # stretch so that 255 -> 255 and 127.5 -> 0
+            binary_mask = skimage.exposure.rescale_intensity(binary_mask, in_range=(127.5, 255), out_range=(0,255))
+
+            output_image[binary_mask<127.5] = 255
+
+            faces.append(np.dstack((cv2.cvtColor(image, cv2.COLOR_RGB2BGR), binary_mask)))
+        
+        return faces
+
+
+    # Segments all faces detected
+    def segmentFace(self, input):
+        image = cv2.imread(input)[..., ::-1]
+        
+        # Get the height and width of the input image.
+        image_height, image_width, _ = image.shape
+
+        cropped_images = []
+
+        mp_face_detection = mediapipe.solutions.face_detection
+        mp_face_detector = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.7)
+
+        # Perform the face detection on the image.
+        results = mp_face_detector.process(image)
+
+        # Check if the face(s) in the image are found.
+        if results.detections:
+
+            # Iterate over the found faces.
+            for face_no, face in enumerate(results.detections):
+                face_bbox = face.location_data.relative_bounding_box
+
+                # Retrieve the required bounding box coordinates and scale them according to the size of original input image.
+                x1 = int(face_bbox.xmin * image_width)
+                y1 = int(face_bbox.ymin * image_height)
+
+                bbox_width = int(face_bbox.width * image_width)
+                bbox_height = int(face_bbox.height * image_height)
+
+                x2 = x1 + bbox_width
+                y2 = y1 + bbox_height
+
+                # Add some padding
+                x1 = x1 - int(bbox_width / 2)
+                y1 = y1 - int((bbox_height / 2) * 1.3)
+                x2 = x2 + int(bbox_width / 2)
+                y2 = y2 + int((bbox_height / 2) * 1.3)
+
+                if x1 < 0:
+                    x1 = 0
+
+                if y1 < 0:
+                    y1 = 0
+
+                if x2 > image_width:
+                    x2 = image_width
+
+                if y2 > image_height:
+                    x2 = image_height
+
+                # Crop the detected face region.
+                face_crop = image[y1:y2, x1:x2].copy()
+                cropped_images.append(face_crop)
+            
+            croppedFaces = self.__detectFace(cropped_images)
+
+        return croppedFaces
