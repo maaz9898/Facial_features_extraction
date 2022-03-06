@@ -72,7 +72,9 @@ def main():
 
         if args['extract_skintone']:
             for face in faces:
-                findSkinTone(args['input'])
+                color = findSkinTone(args['input'])
+                print('Selected color is ' + str(color))
+
 
 if __name__ == '__main__':
     main()

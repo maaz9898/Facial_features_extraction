@@ -6,6 +6,8 @@ import imutils
 import pprint
 from matplotlib import pyplot as plt
 
+colors = [[25.1, 19.1, 88.2], [40.5, 33.8, 85.9], [27.9, 33.2, 86.3], [22.4, 39.9, 81.6], [15, 46, 68.2], [16.3, 36.6, 51.4]]
+
 def extractSkin(image):
   # Taking a copy of the image
   img =  image.copy()
@@ -149,6 +151,22 @@ def plotColorBar(colorInformation):
   return color_bar
 
 
+def findNearestColor(inColor):
+  smallestVal = 10000
+  smallestID = 0
+  i = 0
+
+  for color in colors:
+    val_diff = abs((color[2] + 100) - inColor[0])
+
+    if val_diff < smallestVal:
+      smallestVal = val_diff
+      smallestID = i
+
+    i += 1
+
+  return colors[smallestID]
+
 def findSkinTone(input):
     # Get Image from URL. If you want to upload an image file and use that comment the below code and replace with  image=cv2.imread("FILE_NAME")
     image=cv2.imread(input)
@@ -161,7 +179,7 @@ def findSkinTone(input):
 
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
-    if faces:
+    if len(faces):
         (x,y,w,h) = faces[0]
         img = image[y:y+h, x:x+w]
     else:
@@ -178,6 +196,7 @@ def findSkinTone(input):
 
     # Find the dominant color. Default is 1 , pass the parameter 'number_of_colors=N' where N is the specified number of colors 
     dominantColors = extractDominantColor(skin,hasThresholding=True)
+    nearestColor = findNearestColor(dominantColors[0]['color'])
 
     #Show in the dominant color as bar
     colour_bar = plotColorBar(dominantColors)
@@ -187,3 +206,5 @@ def findSkinTone(input):
     plt.plot()
 
     plt.show()
+
+    return nearestColor
