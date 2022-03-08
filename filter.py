@@ -85,7 +85,7 @@ def applyFilter(img, filter_type, beta=60):
         return bright(img, beta)
 
     elif filter_type == 'sharpen':
-        return sharp(img)
+        return sharpen(img)
 
     elif filter_type == 'sepia':
         return sepia(img)
