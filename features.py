@@ -4,7 +4,6 @@ import json
 import os
 from utils.SkinToneFinder import findSkinTone
 from utils.FeatureExtractor import FeatureExtractor
-from utils.Filters import applyFilter
 
 """ This is the driver script that uses the FeatureExtractor class"""
 def main():
@@ -48,10 +47,6 @@ def main():
             if args['extract_skintone']:
                 findSkinTone(args['input'])
 
-            if args['filter'] != None:
-                filteredImg = applyFilter(image, str(args['filter']))
-                if filteredImg is not None:
-                    cv2.imwrite(writePath + '_' + str(args[filter]) + '_effect' + '.png', filteredImg)
 
     # Apply feature extraction on a single image
     else:
@@ -82,10 +77,6 @@ def main():
                 color = findSkinTone(args['input'])
                 print('Selected color is ' + str(color))
 
-        if args['filter'] != None:
-            filteredImg = applyFilter(image, str(args['filter']))
-            if filteredImg is not None:
-                cv2.imwrite(writePath + '_' + str(args['filter']) + '_effect' + '.png', filteredImg)
 
 if __name__ == '__main__':
     main()
