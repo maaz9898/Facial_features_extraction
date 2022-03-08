@@ -28,35 +28,39 @@ Now press ‘enter’ all requirements will be installed respectively.
 
 
 ## How to run this project
-This project contains two files.
-1. Test segmentation 2.ipynb
-You can run this in google colab notebook its basic section base block base file which contains individual code execution processes.
-Just go to the repository or go to the project folder and open this file and you will see the google colab link where you can execute the file.
+This project contains two main scripts
+#### 1. features.py  
+This script includes different features' extraction. The script takes command line arguments of selected features, the arguments include:  
 
-2. face_segmentation.py
-To run this you could put this complete code in google colab to save your time.
-In Google Colab cloud
-```bash
-  !python Facial_features_extraction.py -input Test_data/Test1.jpg -face_ori True
+* --input --> the path to an input image or directory (mandatory)  
+* --face_orient --> set it to True if you want to find and save the face orientation to the output json file  
+* --extract_mouth --> set it to True if you want to find and save the mouth's center, width and height to the output json file  
+* --segment_face --> set it to True if you want to segment the faces inside the image  
+* --extract_skintone --> set it to True if you want to extract the skin tone
+  
+Example command line argument:  
 ```
-Or open Facial_features_extraction.py  file in CLI as mentioned below.
-In local machine
-```bash
-  python Facial_features_extraction.py -input Test_data/Test2.jpg -face_ori True
+python features.py --input Test_data/ --segment_face True
 ```
-There is Test_data folder where testing images are available.
+  
 
-- First arguement takes image in '-input' argument takes the image directory.
-- Second arguement takes True value for storing face Direction(orientation).
-argument takes the True value in'-face_ori'. But it is optional arguement. 
+#### 2. filter.py  
+This script can apply different filters. The script takes command line arguments of selected features, the arguments include:  
 
-Facial_features_extraction.py will generate json file like, facial_features.json
-if input image has two faces or many facial features, so Facial_features_extraction.py will extract the faciall features and store into json file. 
-facial_features.json
-
-**(NEW)**  
-By using the same -input command line argument, the user can now provide a directory path to perform feature extraction on all images inside it at once. 
-```bash
-  python Facial_features_extraction.py -input Test_data/ -face_ori True
+* --input --> the path to an input image (mandatory)  
+* --filter --> specifies the type of filter to use, the filters are:  
+&nbsp;&nbsp;**'grey'** for Greyscale filter  
+&nbsp;&nbsp;**'bright'** for Brightness Adjustment  
+&nbsp;&nbsp;**'sharpen'** for Sharpening filter  
+&nbsp;&nbsp;**'sepia'** for Sepia filter  
+&nbsp;&nbsp;**'pencil_sketch'** for Pencil Sketch filter  
+&nbsp;&nbsp;**'hdr'** for HDR filter  
+&nbsp;&nbsp;**'summer'** for Summer filter  
+&nbsp;&nbsp;**'winter'** for Winter filter  
+  
+  
+Example command line argument:  
 ```
-
+python filter.py --input Test_data/Test1.jpeg --filter pencil_sketch
+```  
+The output is saved inside the Filters directory.
