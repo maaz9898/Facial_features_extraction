@@ -170,12 +170,13 @@ def findNearestColor(inColor):
 def findSkinTone(input):
     # Get Image from URL. If you want to upload an image file and use that comment the below code and replace with  image=cv2.imread("FILE_NAME")
     image=cv2.imread(input)
+    out_image = np.zeros((500,500,3), np.uint8)
 
     # Resize image to a width of 250
     image = imutils.resize(image,width=250)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    face_cascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
+    face_cascade = cv2.CascadeClassifier('models/haarcascade_frontalface_default.xml')
 
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
 
@@ -197,6 +198,8 @@ def findSkinTone(input):
     # Find the dominant color. Default is 1 , pass the parameter 'number_of_colors=N' where N is the specified number of colors 
     dominantColors = extractDominantColor(skin,hasThresholding=True)
     nearestColor = findNearestColor(dominantColors[0]['color'])
+
+    #out_image[:] = nearestColor
 
     #Show in the dominant color as bar
     colour_bar = plotColorBar(dominantColors)
