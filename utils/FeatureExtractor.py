@@ -53,7 +53,7 @@ class FeatureExtractor:
 
 
     # Main method that extracts different features
-    def extractFeatures(self, faceOrient, extractMouth, compress=True):
+    def extractFeatures(self, faceOrient=True, extractMouth=True, compress=True):
         """ 
         A quick guide to different features IDs
 
@@ -256,3 +256,22 @@ class FeatureExtractor:
             croppedFaces = self.__detectFace(cropped_images)
 
         return croppedFaces
+
+
+    # Upscales the image using super resolution
+    def upscale(self, scalar):
+        scaling_dict = {'2': "models/EDSR_x2.pb", '4': "models/EDSR_x4.pb"}  # A dict to select the appropriate model
+
+        sr = cv2.dnn_superres.DnnSuperResImpl_create()  # SR opencv object
+
+        path = scaling_dict[scalar]
+
+        # Read and set the selected model
+        sr.readModel(path)
+        sr.setModel("edsr", int(scalar))
+
+        # Upscales the input image
+        copiedImg = self.img.copy()
+        result = sr.upsample(copiedImg)
+
+        return result
