@@ -6,3 +6,5 @@ imutils
 scikit-image
 scipy
 scikit-learn
+Flask
+Flask-RESTful
