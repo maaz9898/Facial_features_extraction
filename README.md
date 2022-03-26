@@ -63,4 +63,46 @@ Example command line argument:
 ```
 python filter.py --input Test_data/Test1.jpeg --filter pencil_sketch
 ```  
-The output is saved inside the Filters directory.
+The output is saved inside the Filters directory.  
+
+## Deployed API  
+The api.py script deploys the project to be usable by just passing arguments to an API.  
+
+#### How it works:  
+Run the api.py script by running  
+```
+python api.py
+```  
+This will initialize the app in the localhost and provide a URL where the app is running  
+
+There are 3 endpoints: /features, /filters and /image.  
+
+#### /features endpoint:  
+* The features endpoint takes two arguments, the path to an input image and the scale parameter (optional)  
+* The user can scale the input image by x2 or x4 by providng scale=2 or scale=4, if no scale parameter is provided, the input image is saved as it as  
+* Images are saved inside static/output/ directory with a prefix that describes the operation performed on the image  
+* Example  
+```
+http://127.0.0.1:5000/image?img=Test1.jpg&scale=2
+```  
+Note: the input image path is provided relative to the parent directory. In the previous example the Test1.jpg image is inside the parent directory.  
+* This returns a json with the extracted features along with a URL of the masked photo
+
+#### /filters endpoint:  
+* The filters endpoint takes two arguments, the path to an input image and the filter type 
+* Example  
+```
+http://127.0.0.1:5000/filters?image=static/output/upscaled_Test1.jpg&filter=grey
+```  
+* This endpoint also returns a json with a URL of the output image  
+
+
+#### /image endpoint:  
+* The image endpoint makes images accessible through the API and also displays images that are passed to it
+* Example  
+```
+http://127.0.0.1:5000/image?img=../static/output/grey_Test1.jpg
+```   
+Note: input path is relative to the templates/ folder since this is where the html file is  
+
+<img src="https://i.ibb.co/dMV8nYy/Screenshot-from-2022-03-26-19-53-14.png" alt="Screenshot-from-2022-03-26-19-53-14" border="0"></a>
