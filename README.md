@@ -16,11 +16,9 @@ In this blog, you can find instructions of [pycharm IDE](https://www.tutorialspo
 
 
 
-## Libraries and frameworks
-
-After installation of IDE and package manager.
-Open Command line and write a below line.
-
+## Libraries and frameworks  
+This project was developed using Python 3.7.11.  
+After installation of IDE and package manager, open Command line and write a below line.
 ```bash
   pip install -r requirements.txt
 ```
