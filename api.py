@@ -2,26 +2,32 @@ from flask import Flask, render_template
 from flask_restful import Resource, Api, reqparse
 from utils.FeatureExtractor import FeatureExtractor
 from filter import applyFilter
+import numpy as np
 import cv2
 from flask import request
+from flask import url_for
+from flask import Flask, render_template, redirect, url_for, request
+from PIL import Image
+import urllib
+
+
+
 
 
 # Create a Flask app
-app = Flask(__name__)
+app = Flask(__name__, static_url_path = "/static", static_folder = "static")
 
 # Output folder where images are saved
-WRITE_PATH = 'static/output/'
+WRITE_PATH = '/home/taptap/Facial_features_extraction-main/static/output/'
 
 # Image endpoint URL
-IMG_PATH = 'http://127.0.0.1:5001/image?img=../static/output/'
+IMG_PATH = 'https://staging.taptapstories.dk/mask/image?img=/static/output/'
 
 # Create an API using Flask app
 api = Api(app)
 
-# Features class to use for creating features endpoint
-class Features(Resource):
-    # Define GET method behaviour
-    def get(self):
+@app.route('/mask/features')
+def get_features():
         # parser = reqparse.RequestParser()  # initialize
         
         
@@ -33,19 +39,25 @@ class Features(Resource):
         iimage = request.args.get('image')
         scale = request.args.get('scale')
 
-        image = cv2.imread(iimage)  # Read the input image
+        requested_url = urllib.request.urlopen(iimage)
+        
+        image_array = np.asarray(bytearray(requested_url.read()), dtype=np.uint8)
+        image = cv2.imdecode(image_array, -1)
+
+
+        # image = cv2.imread(iimage)  # Read the input image
         FExtractor = FeatureExtractor(image)  # Create a FeatureExtractor object
         
         features = FExtractor.extractFeatures()  # Call the extractFeatures() method
 
         # If a scalar is provided
-        if args['scale'] != None:
+        if scale != None:
             # Create write path and URL
             out_path = WRITE_PATH + 'upscaled_' + iimage.split('/')[-1]
             return_path = IMG_PATH + 'upscaled_' + iimage.split('/')[-1]
 
             # Apply OpenCV SR upscaling & save output image
-            upscaled_img = FExtractor.upscale(scale)
+            upscaled_img = FExtractor.upscale(int(scale))
             cv2.imwrite(out_path, upscaled_img)
         
         else:
@@ -62,9 +74,8 @@ class Features(Resource):
 
 
 # Filters class to use for creating filters endpoint
-class Filters(Resource):
-    # Define GET method behaviour
-    def get(self):
+@app.route('/mask/filter')
+def get():
 
         iimage = request.args.get('image')
         fiilter = request.args.get('filter')
@@ -74,8 +85,14 @@ class Filters(Resource):
         # parser.add_argument('filter', required=True)
         
         # args = parser.parse_args()  # parse arguments to dictionary
+        # nparr = np.fromstring(iimage, np.uint8)
+        # image = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
+        requested_url = urllib.request.urlopen(iimage)
         
-        image = cv2.imread(iimage)  # Read the input image
+        image_array = np.asarray(bytearray(requested_url.read()), dtype=np.uint8)
+        image = cv2.imdecode(image_array, -1)
+        # image = cv2.imread(nparr)  # Read the input image
+        
         
         # Apply selected filter
         filteredImg = applyFilter(image,fiilter)
@@ -92,7 +109,7 @@ class Filters(Resource):
 
 
 # Image endpoint
-@app.route('/image')
+@app.route('/mask/image')
 def display_img():
     img = request.args.get('img')
     # parser = reqparse.RequestParser()  # initialize
@@ -106,8 +123,8 @@ def display_img():
 
 
 # Add API endpoints
-api.add_resource(Features, '/features')
-api.add_resource(Filters, '/filters')
+# api.add_resource(Features, '/features')
+# api.add_resource(Filters, '/filters')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5001)  # run our Flask app
