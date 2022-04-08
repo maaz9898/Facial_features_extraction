@@ -103,14 +103,17 @@ def segment():
 
                 out_path = WRITE_PATH + str(i) + '_' + iimage.split('/')[-1]
                 return_path = Features_PATH + str(i) + '_' + iimage.split('/')[-1]
-
                 cv2.imwrite(out_path, face_image)
-                url = '{"'+face+'": '+return_path+'}'
+
+                output_features  = urllib.request.urlopen(return_path)
+                js = json.loads(output_features.read())
+                jstr = str(js).replace("\\'", "")
+                # url = '{"'+face+'": '+output_features.read().decode()+'}'
                 url= {
-                'Face': return_path}
+                'Face': str(jstr)}
                 data = json.dumps(url)
                 json_arr.append(data)
-            return str(json_arr) , 200 
+            return str(json_arr).replace("\'", "").replace("\\", "") , 200 
         # except:
         #     return "Error"           
 

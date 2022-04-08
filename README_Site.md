@@ -31,3 +31,12 @@ https://staging.taptapstories.dk/mask/filter?image=https://www.w3schools.com/css
 * This endpoint also returns a json with a URL of the output image  
 
 
+#### /segment endpoint:  
+* The segment endpoint takes image url then return json with the features of each face in that image and url of the cropped faces of that image each face is in sperate image
+
+* Example  
+```
+https://staging.taptapstories.dk/mask/segment?image=https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MXx8ZmFjZXxlbnwwfHwwfHw%3D&w=1000&q=80
+```  
+
+* This endpoint returns a json with a each face passed to features endpoint 

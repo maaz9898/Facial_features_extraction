@@ -117,11 +117,11 @@ class FeatureExtractor:
                 hatAngle = int(round((np.degrees(np.arctan2(hatCenterX, hatCenterY)) - 180), 0))  # Rotation Angle
 
                 # Update the features dictionary
-                self.__features['Left_eye_' + str(counter + 1)] = {'rotation': leftEyeAngle, 'width': leftEyeW, 'height': leftEyeH,
+                self.__features['Left_eye'] = {'rotation': leftEyeAngle, 'width': leftEyeW, 'height': leftEyeH,
                                                         'center': leftEyeMid}
-                self.__features['Right_eye_' + str(counter + 1)] = {'rotation': rightEyeAngle, 'width': rightEyeW, 'height': rightEyeH,
+                self.__features['Right_eye'] = {'rotation': rightEyeAngle, 'width': rightEyeW, 'height': rightEyeH,
                                                         'center': rightEyeMid}
-                self.__features['Hat_' + str(counter + 1)] = {'rotation': hatAngle, 'center': hatCenter}
+                self.__features['Hat'] = {'rotation': hatAngle, 'center': hatCenter}
 
                 # Find the face orientation if requested by the user
                 if faceOrient:
@@ -144,7 +144,7 @@ class FeatureExtractor:
                         pos = 'center'
 
                     # Update the features dictionary
-                    self.__features['Face_ori_' + str(counter + 1)] = {'Face_orientation': pos}
+                    self.__features['Face_ori'] = {'Face_orientation': pos}
 
                 if extractMouth:
                     mouthW = self.__calcDistance(landmarks[61], landmarks[291], width, height)  # Width
@@ -152,7 +152,7 @@ class FeatureExtractor:
                     mouthCenter = self.__midpoint(landmarks[13], landmarks[14], width, height)  # Center
 
                     # Update the features dictionary
-                    self.__features['Mouth_' + str(counter + 1)] = {'Center': mouthCenter, 'width': mouthW, 'height': mouthH}
+                    self.__features['Mouth'] = {'Center': mouthCenter, 'width': mouthW, 'height': mouthH}
 
                 counter += 1
             
@@ -192,11 +192,11 @@ class FeatureExtractor:
                 binary_mask = cv2.GaussianBlur(binary_mask, (0,0), sigmaX=2, sigmaY=2, borderType = cv2.BORDER_DEFAULT)
 
                 # stretch so that 255 -> 255 and 127.5 -> 0
-                binary_mask = skimage.exposure.rescale_intensity(binary_mask, in_range=(127.5, 255), out_range=(0,255))
+                # binary_mask = skimage.exposure.rescale_intensity(binary_mask, in_range=(127.5, 255), out_range=(0,255))
 
                 output_image[binary_mask<127.5] = 255
 
-                faces.append(np.dstack((cv2.cvtColor(image, cv2.COLOR_RGB2BGR), binary_mask)))
+                faces.append(np.dstack((output_image, binary_mask)))
                 # greyscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
             K.clear_session()    
             return faces
