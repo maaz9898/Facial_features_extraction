@@ -1,9 +1,8 @@
 import cv2
 import mediapipe
 import numpy as np
-import skimage.exposure
 from models.parser import face_parser
-from keras import backend as K
+from tensorflow.compat.v1.keras import backend as K
 
 "A class that encapsulates all functionalities needed"
 class FeatureExtractor:
@@ -144,15 +143,18 @@ class FeatureExtractor:
                         pos = 'center'
 
                     # Update the features dictionary
-                    self.__features['Face_ori'] = {'Face_orientation': pos}
+                    self.__features['Face'] = {'orientation': pos}
 
                 if extractMouth:
                     mouthW = self.__calcDistance(landmarks[61], landmarks[291], width, height)  # Width
                     mouthH = self.__calcDistance(landmarks[0], landmarks[17], width, height)  # Height
                     mouthCenter = self.__midpoint(landmarks[13], landmarks[14], width, height)  # Center
 
+                    mouthDX = int((landmarks[61].x) * width) - int((landmarks[291].x) * width)
+                    mouthDY = int((landmarks[61].y) * height) - int((landmarks[291].y) * height)
+                    mouthRotation = round((np.degrees(np.arctan2(mouthDY, mouthDX)) - 180)) # Rotation Angle
                     # Update the features dictionary
-                    self.__features['Mouth'] = {'Center': mouthCenter, 'width': mouthW, 'height': mouthH}
+                    self.__features['Mouth'] = {'Center': mouthCenter, 'width': mouthW, 'height': mouthH, 'rotation': mouthRotation}
 
                 counter += 1
             
@@ -198,9 +200,10 @@ class FeatureExtractor:
 
                 faces.append(np.dstack((output_image, binary_mask)))
                 # greyscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-            K.clear_session()    
+            K.clear_session()
             return faces
-        except:
+        except Exception as e:
+            # print(e)
             K.clear_session() 
 
     # Segments all faces detected
@@ -214,11 +217,12 @@ class FeatureExtractor:
             cropped_images = []
 
             mp_face_detection = mediapipe.solutions.face_detection
-            mp_face_detector = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.7)
+            mp_face_detector = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5)
 
             # Perform the face detection on the image.
             results = mp_face_detector.process(image)
 
+            croppedFaces = []
             # Check if the face(s) in the image are found.
             if results.detections:
 
@@ -255,13 +259,14 @@ class FeatureExtractor:
                         x2 = image_height
 
                     # Crop the detected face region.
-                    face_crop = image[y1:y2, x1:x2].copy()
+                    face_crop = image.copy()
                     cropped_images.append(face_crop)
                 
                 croppedFaces = self.__detectFace(cropped_images)
             K.clear_session()
             return croppedFaces
-        except:
+        except Exception as e:
+            # print(e)
             K.clear_session()    
 
 
