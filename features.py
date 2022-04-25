@@ -62,7 +62,7 @@ def main():
         json.dump(features, out_file, indent=4)
         out_file.close()
 
-        faces = FExtractor.segmentFace(args['input'])
+        faces = FExtractor.segmentFace(image)
 
         if args['segment_face']:
             counter = 0
