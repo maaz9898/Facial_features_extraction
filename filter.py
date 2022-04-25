@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import scipy
 import argparse
 from scipy.interpolate import UnivariateSpline
 
