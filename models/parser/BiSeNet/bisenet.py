@@ -1,6 +1,8 @@
-from keras.layers import *
-from keras.models import Model
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+from tensorflow.compat.v1.keras.layers import (Conv2D,ZeroPadding2D,Activation,Add,Reshape,Multiply,Concatenate,GlobalAveragePooling2D,Lambda,MaxPooling2D,Input,BatchNormalization)
+from tensorflow.compat.v1.keras.models import Model
+
+tf.disable_v2_behavior()
 
 def conv_block(x, f, k, s=1, block_name="", layer_id="", use_activ=True):
     if k != 1:
