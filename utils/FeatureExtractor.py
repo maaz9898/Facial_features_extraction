@@ -37,23 +37,52 @@ class FeatureExtractor:
 
         return formattedImg.shape
 
-    # Helper function
+    # Helper function  to calculate the euclidean distance between two points
     def __euclideanDistance(self, leftx, lefty, rightx, righty):
         return np.sqrt((leftx-rightx)**2 +(lefty-righty)**2)
 
-    # Helper funtion
+    # Helper funtion to calculate the distance between two points
     def __calcDistance(self, leftPt, rightPt, width, height):
         return int(
         self.__euclideanDistance(int(leftPt.x * width),  int(leftPt.y * height),
                            int(rightPt.x * width), int(rightPt.y * height)))
     
-    # Helper function
+    # Helper function to calculate the midpoint between two points
     def __midpoint(self, pt1 , pt2, width, height):
         return int((pt1.x*width + pt2.x*width)/2), int((pt1.y*height + pt2.y*height)/2)
 
+    landmarkDict = {
+        #Left, Right, Upper, Lower
+        "left_eye": [130,243,27,33],
+        "right_eye": [463,359,257,253],
+        "mouth": [61,291,0,17]
+    }
 
+    # Calculate features for landmarks
+    def __calc(self, landmarks, entity, shape):
+        if entity in self.landmarkDict:
+            l1, l2 = landmarks[self.landmarkDict[entity][0]], landmarks[self.landmarkDict[entity][1]]
+            l3, l4 = landmarks[self.landmarkDict[entity][2]], landmarks[self.landmarkDict[entity][3]]
+        else:
+            return None
+        c1 = self.__getRelativePointCoords(shape, l1)
+        c2 = self.__getRelativePointCoords(shape, l2)
+        pts = np.array([c1, c2])
+        rectH = list(cv2.minAreaRect(pts))
+        c3 = self.__getRelativePointCoords(shape, l3)
+        c4 = self.__getRelativePointCoords(shape, l4)
+        pts = np.array([c3, c4])
+        rectV = list(cv2.minAreaRect(pts))
+
+        width = rectH[1][0]
+        rotation = rectH[2]
+        height = rectV[1][0]
+        center = rectH[0]
+        return {'rotation': rotation, 'width': width, 'height': height,
+                                                        'center': center}
+    
     # Main method that extracts different features
-    def extractFeatures(self, faceOrient=True, extractMouth=True, compress=True):
+    def extractFeatures(self, faceOrient=True, extractMouth=True, compress=False):
         """ 
         A quick guide to different features IDs
 
@@ -80,7 +109,6 @@ class FeatureExtractor:
 
         Hat Center --> 10
         """
-
         # Call the preprocessImg() method
         height, width, _ = self.__processImg(compress)
 
@@ -90,36 +118,16 @@ class FeatureExtractor:
             
             for facial_landmarks in self.__results.multi_face_landmarks:
                 landmarks = facial_landmarks.landmark
-
-                """ Left Eye Attributes """
-                leftEyeW = self.__calcDistance(landmarks[130], landmarks[243], width, height)  # Width
-                leftEyeH = self.__calcDistance(landmarks[27], landmarks[23], width, height)  # Height
-                leftEyeMid = self.__midpoint(landmarks[27], landmarks[23], width, height)  # Midpoint
-
-                leftEyeDX = int((landmarks[130].x) * width) - int((landmarks[243].x) * width)
-                leftEyeDY = int((landmarks[130].y) * height) - int((landmarks[243].y) * height)
-                leftEyeAngle = int(round((np.degrees(np.arctan2(leftEyeDY, leftEyeDX)) - 180), 0))  # Rotation Angle
-
-                """ Right Eye Attributes """
-                rightEyeW = self.__calcDistance(landmarks[463], landmarks[359], width, height)  # Width
-                rightEyeH = self.__calcDistance(landmarks[257], landmarks[253], width, height)  # Height
-                rightEyeMid = self.__midpoint(landmarks[257], landmarks[253], width, height)  # Midpoint
-
-                rightEyeDX = int((landmarks[463].x) * width) - int((landmarks[359].x) * width)
-                rightEyeDY = int((landmarks[463].y) * height) - int((landmarks[359].y) * height)
-                rightEyeAngle = int(round((np.degrees(np.arctan2(leftEyeDY, leftEyeDX)) - 180), 0))  # Rotation Angle
+                # Update the features dictionary
+                self.__features['Left_eye'] = self.__calc(landmarks, "left_eye", (height, width))
+                self.__features['Right_eye'] = self.__calc(landmarks, "right_eye", (height, width))
 
                 """ Hat Attributes """
                 hatCenterX = int((landmarks[10].x) * width)
                 hatCenterY = int((landmarks[10].y) * height)
                 hatCenter = [hatCenterX, hatCenterY]  # Center
-                hatAngle = int(round((np.degrees(np.arctan2(hatCenterX, hatCenterY)) - 180), 0))  # Rotation Angle
-
+                hatAngle = round((np.degrees(np.arctan2(hatCenterX, hatCenterY)) - 180))  # Rotation Angle
                 # Update the features dictionary
-                self.__features['Left_eye'] = {'rotation': leftEyeAngle, 'width': leftEyeW, 'height': leftEyeH,
-                                                        'center': leftEyeMid}
-                self.__features['Right_eye'] = {'rotation': rightEyeAngle, 'width': rightEyeW, 'height': rightEyeH,
-                                                        'center': rightEyeMid}
                 self.__features['Hat'] = {'rotation': hatAngle, 'center': hatCenter}
 
                 # Find the face orientation if requested by the user
@@ -143,18 +151,11 @@ class FeatureExtractor:
                         pos = 'center'
 
                     # Update the features dictionary
-                    self.__features['Face'] = {'orientation': pos}
+                    self.__features['Face_ori'] = {'Face_orientation': pos}
 
                 if extractMouth:
-                    mouthW = self.__calcDistance(landmarks[61], landmarks[291], width, height)  # Width
-                    mouthH = self.__calcDistance(landmarks[0], landmarks[17], width, height)  # Height
-                    mouthCenter = self.__midpoint(landmarks[13], landmarks[14], width, height)  # Center
-
-                    mouthDX = int((landmarks[61].x) * width) - int((landmarks[291].x) * width)
-                    mouthDY = int((landmarks[61].y) * height) - int((landmarks[291].y) * height)
-                    mouthRotation = round((np.degrees(np.arctan2(mouthDY, mouthDX)) - 180)) # Rotation Angle
                     # Update the features dictionary
-                    self.__features['Mouth'] = {'Center': mouthCenter, 'width': mouthW, 'height': mouthH, 'rotation': mouthRotation}
+                    self.__features['Mouth'] = self.__calc(landmarks, "mouth", (height, width))
 
                 counter += 1
             
