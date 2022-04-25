@@ -31,7 +31,7 @@ class FeatureExtractor:
 
         formattedImg = cv2.cvtColor(copiedImg, cv2.COLOR_BGR2RGB)
 
-        face = mediapipe.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=6, min_detection_confidence=0.5)
+        face = mediapipe.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=6, min_detection_confidence=0.4)
 
         self.__results = face.process(formattedImg)  # Run the FaceMesh module from Mediapipe on the preprocessed image
 
@@ -50,6 +50,23 @@ class FeatureExtractor:
     # Helper function to calculate the midpoint between two points
     def __midpoint(self, pt1 , pt2, width, height):
         return int((pt1.x*width + pt2.x*width)/2), int((pt1.y*height + pt2.y*height)/2)
+
+    # Helper function to calculate the absolute coordinates of a landmark point
+    def __getRelativePointCoords(self, image_shape, landmark):
+        """
+        This function returns the coordinates of a specified point on the input image.
+        Args:
+            image_shape:    The input image shape.
+            landmark:       The landmark feature.
+        Returns:
+            point_coords:   The coordinates of the specified point on the input image.
+        """
+        # Get the coordinates of the specified point.
+        x = int(landmark.x * image_shape[1])
+        y = int(landmark.y * image_shape[0])
+        point_coords = (x, y)
+        # Return the coordinates of the specified point relative to the top left corner of the input image.
+        return point_coords
 
     landmarkDict = {
         #Left, Right, Upper, Lower
@@ -151,7 +168,7 @@ class FeatureExtractor:
                         pos = 'center'
 
                     # Update the features dictionary
-                    self.__features['Face_ori'] = {'Face_orientation': pos}
+                    self.__features['Face'] = {'orientation': pos}
 
                 if extractMouth:
                     # Update the features dictionary
