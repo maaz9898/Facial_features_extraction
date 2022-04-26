@@ -3,6 +3,7 @@ import mediapipe
 import numpy as np
 from models.parser import face_parser
 from tensorflow.compat.v1.keras import backend as K
+from config import MIN_CONF
 
 "A class that encapsulates all functionalities needed"
 class FeatureExtractor:
@@ -31,7 +32,7 @@ class FeatureExtractor:
 
         formattedImg = cv2.cvtColor(copiedImg, cv2.COLOR_BGR2RGB)
 
-        face = mediapipe.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=6, min_detection_confidence=0.4)
+        face = mediapipe.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=6, min_detection_confidence=MIN_CONF)
 
         self.__results = face.process(formattedImg)  # Run the FaceMesh module from Mediapipe on the preprocessed image
 
