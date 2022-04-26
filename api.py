@@ -13,7 +13,7 @@ app = Flask(__name__, static_url_path = "/static", static_folder = "static")
 
 # Create an API using Flask app
 api = Api(app)
-# TODO fix endpoints not being converted to json
+
 @app.route('/mask/features')
 def get_features():
     try:
