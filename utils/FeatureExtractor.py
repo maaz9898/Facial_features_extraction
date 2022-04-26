@@ -42,7 +42,7 @@ class FeatureExtractor:
     def __euclideanDistance(self, leftx, lefty, rightx, righty):
         return np.sqrt((leftx-rightx)**2 +(lefty-righty)**2)
 
-    # Helper funtion to calculate the distance between two points
+    # Helper function to calculate the distance between two points
     def __calcDistance(self, leftPt, rightPt, width, height):
         return int(
         self.__euclideanDistance(int(leftPt.x * width),  int(leftPt.y * height),
@@ -127,7 +127,7 @@ class FeatureExtractor:
 
         Hat Center --> 10
         """
-        # Call the preprocessImg() method
+        # Call the processImg() method
         height, width, _ = self.__processImg(compress)
 
         height, width = self.img.shape[:2]

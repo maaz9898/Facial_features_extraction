@@ -94,8 +94,6 @@ def segment():
         return "Error"
 
 
-
-
 # Filters class to use for creating filters endpoint
 @app.route('/mask/filter')
 def get():
@@ -137,6 +135,7 @@ def get():
     except Exception as e:
         # print(e)
         return "Error"
+
 
 # Image endpoint
 @app.route('/mask/image')
