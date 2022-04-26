@@ -9,5 +9,8 @@ IMG_PATH = f'{BASE_URL}/static/output/'
 # Features endpoint URL
 FEATURES_PATH = f'{BASE_URL}/mask/features?image={BASE_URL}/static/output/'
 
-# Minimum Confidence threshold for face detection
+# Minimum Confidence threshold for face landmark detection
 MIN_CONF = 0.5
+
+# Minimum Confidence threshold for face detection
+MIN_CONF_FACE = 0.5

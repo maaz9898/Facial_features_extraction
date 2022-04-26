@@ -3,7 +3,7 @@ import mediapipe
 import numpy as np
 from models.parser import face_parser
 from tensorflow.compat.v1.keras import backend as K
-from config import MIN_CONF
+from config import MIN_CONF, MIN_CONF_FACE
 
 "A class that encapsulates all functionalities needed"
 class FeatureExtractor:
@@ -100,7 +100,7 @@ class FeatureExtractor:
                                                         'center': center}
     
     # Main method that extracts different features
-    def extractFeatures(self, faceOrient=True, extractMouth=True, compress=False):
+    def extractFeatures(self, faceOrient=True, extractMouth=True, compress=True):
         """ 
         A quick guide to different features IDs
 
@@ -130,6 +130,7 @@ class FeatureExtractor:
         # Call the preprocessImg() method
         height, width, _ = self.__processImg(compress)
 
+        height, width = self.img.shape[:2]
         # Proceed if face landmarks are detected
         if self.__results.multi_face_landmarks != None:
             counter = 0  # Keeps track of number of faces
@@ -236,7 +237,7 @@ class FeatureExtractor:
             cropped_images = []
 
             mp_face_detection = mediapipe.solutions.face_detection
-            mp_face_detector = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.5)
+            mp_face_detector = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=MIN_CONF_FACE)
 
             # Perform the face detection on the image.
             results = mp_face_detector.process(image)
@@ -277,7 +278,10 @@ class FeatureExtractor:
                     if y2 > image_height:
                         x2 = image_height
 
-                    # Crop the detected face region.
+                    # canvas = np.zeros(image.shape).astype(image.dtype)
+                    # canvas[y1:y2, x1:x2] = image[y1:y2, x1:x2]
+                    # # Crop the detected face region.
+                    # face_crop = canvas.copy()
                     face_crop = image.copy()
                     cropped_images.append(face_crop)
                 
