@@ -3,7 +3,7 @@ import mediapipe
 import numpy as np
 from models.parser import face_parser
 from tensorflow.compat.v1.keras import backend as K
-from config import MIN_CONF, MIN_CONF_FACE, COMPRESS_PCT
+from config import MIN_CONF, MIN_CONF_FACE, COMPRESS_PCT, SEGMENT_CONF
 
 "A class that encapsulates all functionalities needed"
 class FeatureExtractor:
@@ -42,7 +42,7 @@ class FeatureExtractor:
     def __euclideanDistance(self, leftx, lefty, rightx, righty):
         return np.sqrt((leftx-rightx)**2 +(lefty-righty)**2)
 
-    def singleContourMask(binary_mask):
+    def singleContourMask(self, binary_mask):
         contours, _ = cv2.findContours(binary_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
         
         mask = np.zeros(binary_mask.shape, binary_mask.dtype)
@@ -204,23 +204,30 @@ class FeatureExtractor:
                 output_image = image.copy()
 
                 segmentation_output = prs.parse_face(image)[0]
+                
+                binary_mask = np.full(shape=[segmentation_output.shape[0], segmentation_output.shape[1]], fill_value=255, dtype=np.uint8)
+                binary_mask[segmentation_output==16] = 0 # CLOTHES
+                binary_mask[segmentation_output==15] = 0 # ??
+                binary_mask[segmentation_output==14] = 0 # NECK
+                binary_mask[segmentation_output==0] = 0 # BACKGROUND
+                
+                binary_mask = self.singleContourMask(binary_mask)
 
-                binary_mask = np.ones(shape=[segmentation_output.shape[0],segmentation_output.shape[1]]) * 255
-                binary_mask[segmentation_output==16] = 0
-                binary_mask[segmentation_output==15] = 0
-                binary_mask[segmentation_output==14] = 0
-                binary_mask[segmentation_output==0] = 0
+                # Enlarge the mask
+                dilatation_size = 3
+                dilatation_type = cv2.MORPH_CROSS
+                element = cv2.getStructuringElement(dilatation_type,(2*dilatation_size + 1, 2*dilatation_size+1),(dilatation_size, dilatation_size))
+                binary_mask = cv2.dilate(binary_mask, element)
+                # apply smoothing to the mask
+                blur_level = 2
+                binary_mask = cv2.blur(binary_mask, (blur_level, blur_level))
 
                 # blur alpha channel
                 binary_mask = cv2.GaussianBlur(binary_mask, (0,0), sigmaX=2, sigmaY=2, borderType = cv2.BORDER_DEFAULT)
 
-                # stretch so that 255 -> 255 and 127.5 -> 0
-                # binary_mask = skimage.exposure.rescale_intensity(binary_mask, in_range=(127.5, 255), out_range=(0,255))
-
-                output_image[binary_mask<127.5] = 255
+                output_image[binary_mask<(255*(1-SEGMENT_CONF))] = 255
 
                 faces.append(np.dstack((output_image, binary_mask)))
-                # greyscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
             K.clear_session()
             return faces
         except Exception as e:
@@ -278,16 +285,17 @@ class FeatureExtractor:
 
                     if y2 > image_height:
                         x2 = image_height
-
-                    # canvas = np.zeros(image.shape).astype(image.dtype)
-                    # canvas[y1:y2, x1:x2] = image[y1:y2, x1:x2]
-                    # Crop the detected face region.
-                    # face_crop = canvas.copy()
-                    # face_crop = image.copy()
+                    
                     face_crop = image[y1:y2, x1:x2]
                     cropped_images.append(face_crop)
                 
                 croppedFaces = self.__detectFace(cropped_images)
+                # for i, face in enumerate(croppedFaces):
+                #     color = [255, 255, 255]
+                #     delta_w = image_width - face.shape[1]
+                #     delta_h = image_height - face.shape[0]
+                #     croppedFaces[i] = cv2.copyMakeBorder(face, 0, delta_h, 0, delta_w, cv2.BORDER_CONSTANT,
+                #         value=color)
             K.clear_session()
             return croppedFaces
         except Exception as e:

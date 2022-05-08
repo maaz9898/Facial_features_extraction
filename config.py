@@ -14,3 +14,8 @@ MIN_CONF = 0.5
 
 # Minimum Confidence threshold for face detection
 MIN_CONF_FACE = 0.5
+
+# Compression percentage for images (for downsampling)
+COMPRESS_PCT = 0.3
+
+SEGMENT_CONF = 0.8
