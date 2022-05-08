@@ -42,15 +42,16 @@ class FeatureExtractor:
     def __euclideanDistance(self, leftx, lefty, rightx, righty):
         return np.sqrt((leftx-rightx)**2 +(lefty-righty)**2)
 
-    # Helper function to calculate the distance between two points
-    def __calcDistance(self, leftPt, rightPt, width, height):
-        return int(
-        self.__euclideanDistance(int(leftPt.x * width),  int(leftPt.y * height),
-                           int(rightPt.x * width), int(rightPt.y * height)))
-    
-    # Helper function to calculate the midpoint between two points
-    def __midpoint(self, pt1 , pt2, width, height):
-        return int((pt1.x*width + pt2.x*width)/2), int((pt1.y*height + pt2.y*height)/2)
+    def singleContourMask(binary_mask):
+        contours, _ = cv2.findContours(binary_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        
+        mask = np.zeros(binary_mask.shape, binary_mask.dtype)
+        sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        cv2.drawContours(mask, [sorted_contours[0]], 0, (255.0), -1)
+        mask = cv2.bitwise_not(mask)
+        removed = cv2.subtract(binary_mask, mask)
+        return removed
+
 
     # Helper function to calculate the absolute coordinates of a landmark point
     def __getRelativePointCoords(self, image_shape, landmark):
