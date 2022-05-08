@@ -3,7 +3,7 @@ import mediapipe
 import numpy as np
 from models.parser import face_parser
 from tensorflow.compat.v1.keras import backend as K
-from config import MIN_CONF, MIN_CONF_FACE
+from config import MIN_CONF, MIN_CONF_FACE, COMPRESS_PCT
 
 "A class that encapsulates all functionalities needed"
 class FeatureExtractor:
@@ -14,7 +14,7 @@ class FeatureExtractor:
         self.__features = {}  # A dictionary to store features
 
     # Compress input image to a certain percentage (Default is 30%)
-    def __compressImg(self, percentage=0.3):
+    def __compressImg(self, percentage=COMPRESS_PCT):
         newWidth = int(self.img.shape[1] * percentage)
         newHeight = int(self.img.shape[0] * percentage)
         newDim = (newWidth, newHeight)  # Width and height after compression
@@ -280,9 +280,10 @@ class FeatureExtractor:
 
                     # canvas = np.zeros(image.shape).astype(image.dtype)
                     # canvas[y1:y2, x1:x2] = image[y1:y2, x1:x2]
-                    # # Crop the detected face region.
+                    # Crop the detected face region.
                     # face_crop = canvas.copy()
-                    face_crop = image.copy()
+                    # face_crop = image.copy()
+                    face_crop = image[y1:y2, x1:x2]
                     cropped_images.append(face_crop)
                 
                 croppedFaces = self.__detectFace(cropped_images)
