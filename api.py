@@ -1,11 +1,10 @@
-from flask import Flask, render_template, redirect, url_for, request
-from flask_restful import Resource, Api, reqparse
+from flask import Flask, render_template, request
+from flask_restful import Api
 from utils.FeatureExtractor import FeatureExtractor
 from filter import applyFilter
 import numpy as np
 import cv2
 from urllib.request import urlopen
-import json
 from config import WRITE_PATH, IMG_PATH, FEATURES_PATH
 # Create a Flask app
 app = Flask(__name__, static_url_path = "/static", static_folder = "static")
