@@ -206,12 +206,11 @@ class FeatureExtractor:
                 segmentation_output = prs.parse_face(image)[0]
                 
                 binary_mask = np.full(shape=[segmentation_output.shape[0], segmentation_output.shape[1]], fill_value=255, dtype=np.uint8)
+                binary_mask[segmentation_output==17] = 0 # HAIR
                 binary_mask[segmentation_output==16] = 0 # CLOTHES
                 binary_mask[segmentation_output==15] = 0 # ??
                 binary_mask[segmentation_output==14] = 0 # NECK
                 binary_mask[segmentation_output==0] = 0 # BACKGROUND
-                
-                binary_mask = self.singleContourMask(binary_mask)
 
                 # Enlarge the mask
                 dilatation_size = 3
@@ -225,6 +224,9 @@ class FeatureExtractor:
                 # blur alpha channel
                 binary_mask = cv2.GaussianBlur(binary_mask, (0,0), sigmaX=2, sigmaY=2, borderType = cv2.BORDER_DEFAULT)
 
+                binary_mask[segmentation_output==17] = 255 # HAIR
+                binary_mask = self.singleContourMask(binary_mask)
+                
                 output_image[binary_mask<(255*(1-SEGMENT_CONF))] = 255
 
                 faces.append(np.dstack((output_image, binary_mask)))
