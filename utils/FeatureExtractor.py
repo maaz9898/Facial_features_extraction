@@ -216,7 +216,7 @@ class FeatureExtractor:
                 dilatation_size = 3
                 dilatation_type = cv2.MORPH_CROSS
                 element = cv2.getStructuringElement(dilatation_type,(2*dilatation_size + 1, 2*dilatation_size+1),(dilatation_size, dilatation_size))
-                binary_mask = cv2.dilate(binary_mask, element)
+                binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_CLOSE, element)
                 # apply smoothing to the mask
                 blur_level = 2
                 binary_mask = cv2.blur(binary_mask, (blur_level, blur_level))
@@ -238,10 +238,8 @@ class FeatureExtractor:
 
     # Segments all faces detected
     def segmentFace(self, image):
-        # image = cv2.imread(input)[..., ::-1]
-        
-        # Get the height and width of the input image.
         try:
+            # Get the height and width of the input image.
             image_height, image_width, _ = image.shape
 
             cropped_images = []
