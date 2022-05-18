@@ -217,15 +217,16 @@ class FeatureExtractor:
                 dilatation_type = cv2.MORPH_CROSS
                 element = cv2.getStructuringElement(dilatation_type,(2*dilatation_size + 1, 2*dilatation_size+1),(dilatation_size, dilatation_size))
                 binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_CLOSE, element)
+
+                binary_mask[segmentation_output==17] = 255 # HAIR
+                binary_mask = self.singleContourMask(binary_mask)
+
                 # apply smoothing to the mask
                 blur_level = 2
                 binary_mask = cv2.blur(binary_mask, (blur_level, blur_level))
 
                 # blur alpha channel
                 binary_mask = cv2.GaussianBlur(binary_mask, (0,0), sigmaX=2, sigmaY=2, borderType = cv2.BORDER_DEFAULT)
-
-                binary_mask[segmentation_output==17] = 255 # HAIR
-                binary_mask = self.singleContourMask(binary_mask)
                 
                 output_image[binary_mask<(255*(1-SEGMENT_CONF))] = 255
 
