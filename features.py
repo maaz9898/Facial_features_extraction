@@ -14,7 +14,7 @@ def main():
     parser.add_argument("--face_orient", default=True, help="True for adding face orientation")
     parser.add_argument("--extract_mouth", default=True, help="True for adding mouth extraction")
     parser.add_argument("--segment_face", default=True, help="True for adding face segmentation")
-    parser.add_argument("--extract_skintone", default=True, help="True for adding skin-tone extraction")
+    parser.add_argument("--extract_skintone", default=False, help="True for adding skin-tone extraction")
 
     args = vars(parser.parse_args())
 
