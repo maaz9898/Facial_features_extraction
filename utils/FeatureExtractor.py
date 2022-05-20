@@ -203,7 +203,7 @@ class FeatureExtractor:
 
                 output_image = image.copy()
 
-                segmentation_output = prs.parse_face(image)[0]
+                segmentation_output = prs.parse_face(image[..., ::-1])[0]
                 
                 binary_mask = np.full(shape=[segmentation_output.shape[0], segmentation_output.shape[1]], fill_value=255, dtype=np.uint8)
                 binary_mask[segmentation_output==17] = 0 # HAIR
@@ -249,7 +249,7 @@ class FeatureExtractor:
             mp_face_detector = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=MIN_CONF_FACE)
 
             # Perform the face detection on the image.
-            results = mp_face_detector.process(image)
+            results = mp_face_detector.process(image[..., ::-1])
 
             croppedFaces = []
             # Check if the face(s) in the image are found.
