@@ -199,7 +199,7 @@ class FeatureExtractor:
 
             for image in images:
                 # Resize image
-                image = self.__resizeImage(image)
+                # image = self.__resizeImage(image)
 
                 output_image = image.copy()
 
