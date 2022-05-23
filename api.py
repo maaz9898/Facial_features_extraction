@@ -5,7 +5,7 @@ from filter import applyFilter
 import numpy as np
 import cv2
 from urllib.request import urlopen
-from config import WRITE_PATH, IMG_PATH, FEATURES_PATH
+from config import WRITE_PATH, IMG_PATH, FEATURES_PATH, PORT_NUM
 # Create a Flask app
 app = Flask(__name__, static_url_path = "/static", static_folder = "static")
 
@@ -89,7 +89,7 @@ def segment():
         data = {'data':json_arr}
         return data, 200
     except Exception as e:
-        # print(e)
+        print(e)
         return "Error"
 
 
@@ -156,4 +156,4 @@ def display_img():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)  # run our Flask app
+    app.run(host='0.0.0.0', port=PORT_NUM, debug=False)  # run our Flask app

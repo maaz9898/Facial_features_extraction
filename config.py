@@ -1,10 +1,11 @@
 BASE_URL = 'http://127.0.0.1:5001'
+PORT_NUM = 5001
 
 # Output folder where images are saved
 WRITE_PATH = './static/output/'
 
 # Image endpoint URL
-IMG_PATH = f'{BASE_URL}/static/output/'
+IMG_PATH = f'{BASE_URL}:{PORT_NUM}/static/output/'
 
 # Features endpoint URL
 FEATURES_PATH = f'{BASE_URL}/mask/features?image={BASE_URL}/static/output/'
