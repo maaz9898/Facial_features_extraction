@@ -4,7 +4,7 @@ from utils.FeatureExtractor import FeatureExtractor
 from filter import applyFilter
 import numpy as np
 import cv2
-from urllib.request import urlopen
+from urllib.request import urlopen, Request
 from config import WRITE_PATH, IMG_PATH, FEATURES_PATH, PORT_NUM
 # Create a Flask app
 app = Flask(__name__, static_url_path = "/static", static_folder = "static")
@@ -19,7 +19,8 @@ def get_features():
         iimage = request.args.get('image')
         scale = request.args.get('scale')
 
-        requested_url = urlopen(iimage)
+        req = Request(iimage, headers={'User-Agent': 'Mozilla/5.0'})
+        requested_url = urlopen(req)
         
         image_array = np.asarray(bytearray(requested_url.read()), dtype=np.uint8)
         image = cv2.imdecode(image_array, -1)
@@ -62,7 +63,8 @@ def segment():
     try:
         iimage = request.args.get('image')
 
-        requested_url = urlopen(iimage)
+        req = Request(iimage, headers={'User-Agent': 'Mozilla/5.0'})
+        requested_url = urlopen(req)
         
         image_array = np.asarray(bytearray(requested_url.read()), dtype=np.uint8)
         image = cv2.imdecode(image_array, -1)
@@ -107,7 +109,8 @@ def get():
         # args = parser.parse_args()  # parse arguments to dictionary
         # nparr = np.fromstring(iimage, np.uint8)
         # image = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
-        requested_url = urlopen(iimage)
+        req = Request(iimage, headers={'User-Agent': 'Mozilla/5.0'})
+        requested_url = urlopen(req)
         
         image_array = np.asarray(bytearray(requested_url.read()), dtype=np.uint8)
         image = cv2.imdecode(image_array, -1)
