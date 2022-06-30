@@ -14,13 +14,13 @@ def main():
     parser.add_argument("--face_orient", default=True, help="True for adding face orientation")
     parser.add_argument("--extract_mouth", default=True, help="True for adding mouth extraction")
     parser.add_argument("--segment_face", default=True, help="True for adding face segmentation")
-    parser.add_argument("--extract_skintone", default=True, help="True for adding skin-tone extraction")
+    parser.add_argument("--extract_skintone", default=False, help="True for adding skin-tone extraction")
 
     args = vars(parser.parse_args())
 
     # Apply feature extraction on a whole directory
     if (len(args['input'].split('.jpg')) == 1) and (len(args['input'].split('.jpeg')) == 1) and (len(args['input'].split('.png')) == 1):
-        for imgPath in os.listdir(args['input']):
+        for imgPath in filter(lambda file: file.endswith(('.jpg','.jpeg','.png')), os.listdir(args['input'])):
             image = cv2.imread(args['input'] + imgPath)
             
             FExtractor = FeatureExtractor(image)  # Create a FeatureExtractor object
@@ -29,14 +29,14 @@ def main():
 
             writePath = args['input'] + imgPath.split('.')[0]  # Specify the path to write to
             
-            out_file = open(writePath + 'json', "w")  # Create .json file with writing privilege
+            out_file = open(writePath + '.json', "w")  # Create .json file with writing privilege
 
             # Write from the features dictionary then close the .json file
             json.dump(features, out_file, indent=4)
             out_file.close()
 
             if args['segment_face']:
-                faces = FExtractor.segmentFace(imgPath)
+                faces = FExtractor.segmentFace(image)
 
                 counter = 0
                 # Iterate over the cropped faces images
@@ -45,7 +45,7 @@ def main():
                     counter +=1
 
             if args['extract_skintone']:
-                findSkinTone(args['input'])
+                findSkinTone(args['input'] + imgPath)
 
 
     # Apply feature extraction on a single image
@@ -62,7 +62,7 @@ def main():
         json.dump(features, out_file, indent=4)
         out_file.close()
 
-        faces = FExtractor.segmentFace(args['input'])
+        faces = FExtractor.segmentFace(image)
 
         if args['segment_face']:
             counter = 0

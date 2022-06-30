@@ -1,9 +1,9 @@
 import cv2
 import mediapipe
 import numpy as np
-import skimage.exposure
 from models.parser import face_parser
-from keras import backend as K
+from tensorflow.compat.v1.keras import backend as K
+from config import MIN_CONF, MIN_CONF_FACE, COMPRESS_PCT, SEGMENT_CONF
 
 "A class that encapsulates all functionalities needed"
 class FeatureExtractor:
@@ -14,7 +14,7 @@ class FeatureExtractor:
         self.__features = {}  # A dictionary to store features
 
     # Compress input image to a certain percentage (Default is 30%)
-    def __compressImg(self, percentage=0.3):
+    def __compressImg(self, percentage=COMPRESS_PCT):
         newWidth = int(self.img.shape[1] * percentage)
         newHeight = int(self.img.shape[0] * percentage)
         newDim = (newWidth, newHeight)  # Width and height after compression
@@ -32,27 +32,74 @@ class FeatureExtractor:
 
         formattedImg = cv2.cvtColor(copiedImg, cv2.COLOR_BGR2RGB)
 
-        face = mediapipe.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=6, min_detection_confidence=0.5)
+        face = mediapipe.solutions.face_mesh.FaceMesh(static_image_mode=True, max_num_faces=6, min_detection_confidence=MIN_CONF)
 
         self.__results = face.process(formattedImg)  # Run the FaceMesh module from Mediapipe on the preprocessed image
 
         return formattedImg.shape
 
-    # Helper function
+    # Helper function  to calculate the euclidean distance between two points
     def __euclideanDistance(self, leftx, lefty, rightx, righty):
         return np.sqrt((leftx-rightx)**2 +(lefty-righty)**2)
 
-    # Helper funtion
-    def __calcDistance(self, leftPt, rightPt, width, height):
-        return int(
-        self.__euclideanDistance(int(leftPt.x * width),  int(leftPt.y * height),
-                           int(rightPt.x * width), int(rightPt.y * height)))
+    def singleContourMask(self, binary_mask):
+        contours, _ = cv2.findContours(binary_mask, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+        
+        mask = np.zeros(binary_mask.shape, binary_mask.dtype)
+        sorted_contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        cv2.drawContours(mask, [sorted_contours[0]], 0, (255.0), -1)
+        mask = cv2.bitwise_not(mask)
+        removed = cv2.subtract(binary_mask, mask)
+        return removed
+
+
+    # Helper function to calculate the absolute coordinates of a landmark point
+    def __getRelativePointCoords(self, image_shape, landmark):
+        """
+        This function returns the coordinates of a specified point on the input image.
+        Args:
+            image_shape:    The input image shape.
+            landmark:       The landmark feature.
+        Returns:
+            point_coords:   The coordinates of the specified point on the input image.
+        """
+        # Get the coordinates of the specified point.
+        x = int(landmark.x * image_shape[1])
+        y = int(landmark.y * image_shape[0])
+        point_coords = (x, y)
+        # Return the coordinates of the specified point relative to the top left corner of the input image.
+        return point_coords
+
+    landmarkDict = {
+        #Left, Right, Upper, Lower
+        "left_eye": [130,243,27,33],
+        "right_eye": [463,359,257,253],
+        "mouth": [61,291,0,17]
+    }
+
+    # Calculate features for landmarks
+    def __calc(self, landmarks, entity, shape):
+        if entity in self.landmarkDict:
+            l1, l2 = landmarks[self.landmarkDict[entity][0]], landmarks[self.landmarkDict[entity][1]]
+            l3, l4 = landmarks[self.landmarkDict[entity][2]], landmarks[self.landmarkDict[entity][3]]
+        else:
+            return None
+        c1 = self.__getRelativePointCoords(shape, l1)
+        c2 = self.__getRelativePointCoords(shape, l2)
+        pts = np.array([c1, c2])
+        rectH = list(cv2.minAreaRect(pts))
+        c3 = self.__getRelativePointCoords(shape, l3)
+        c4 = self.__getRelativePointCoords(shape, l4)
+        pts = np.array([c3, c4])
+        rectV = list(cv2.minAreaRect(pts))
+
+        width = rectH[1][0]
+        rotation = rectH[2]
+        height = rectV[1][0]
+        center = rectH[0]
+        return {'rotation': rotation, 'width': width, 'height': height,
+                                                        'center': center}
     
-    # Helper function
-    def __midpoint(self, pt1 , pt2, width, height):
-        return int((pt1.x*width + pt2.x*width)/2), int((pt1.y*height + pt2.y*height)/2)
-
-
     # Main method that extracts different features
     def extractFeatures(self, faceOrient=True, extractMouth=True, compress=True):
         """ 
@@ -81,46 +128,26 @@ class FeatureExtractor:
 
         Hat Center --> 10
         """
-
-        # Call the preprocessImg() method
+        # Call the processImg() method
         height, width, _ = self.__processImg(compress)
 
+        height, width = self.img.shape[:2]
         # Proceed if face landmarks are detected
         if self.__results.multi_face_landmarks != None:
             counter = 0  # Keeps track of number of faces
             
             for facial_landmarks in self.__results.multi_face_landmarks:
                 landmarks = facial_landmarks.landmark
-
-                """ Left Eye Attributes """
-                leftEyeW = self.__calcDistance(landmarks[130], landmarks[243], width, height)  # Width
-                leftEyeH = self.__calcDistance(landmarks[27], landmarks[23], width, height)  # Height
-                leftEyeMid = self.__midpoint(landmarks[27], landmarks[23], width, height)  # Midpoint
-
-                leftEyeDX = int((landmarks[130].x) * width) - int((landmarks[243].x) * width)
-                leftEyeDY = int((landmarks[130].y) * height) - int((landmarks[243].y) * height)
-                leftEyeAngle = int(round((np.degrees(np.arctan2(leftEyeDY, leftEyeDX)) - 180), 0))  # Rotation Angle
-
-                """ Right Eye Attributes """
-                rightEyeW = self.__calcDistance(landmarks[463], landmarks[359], width, height)  # Width
-                rightEyeH = self.__calcDistance(landmarks[257], landmarks[253], width, height)  # Height
-                rightEyeMid = self.__midpoint(landmarks[257], landmarks[253], width, height)  # Midpoint
-
-                rightEyeDX = int((landmarks[463].x) * width) - int((landmarks[359].x) * width)
-                rightEyeDY = int((landmarks[463].y) * height) - int((landmarks[359].y) * height)
-                rightEyeAngle = int(round((np.degrees(np.arctan2(leftEyeDY, leftEyeDX)) - 180), 0))  # Rotation Angle
+                # Update the features dictionary
+                self.__features['Left_eye'] = self.__calc(landmarks, "left_eye", (height, width))
+                self.__features['Right_eye'] = self.__calc(landmarks, "right_eye", (height, width))
 
                 """ Hat Attributes """
                 hatCenterX = int((landmarks[10].x) * width)
                 hatCenterY = int((landmarks[10].y) * height)
                 hatCenter = [hatCenterX, hatCenterY]  # Center
-                hatAngle = int(round((np.degrees(np.arctan2(hatCenterX, hatCenterY)) - 180), 0))  # Rotation Angle
-
+                hatAngle = round((np.degrees(np.arctan2(hatCenterX, hatCenterY)) - 180))  # Rotation Angle
                 # Update the features dictionary
-                self.__features['Left_eye'] = {'rotation': leftEyeAngle, 'width': leftEyeW, 'height': leftEyeH,
-                                                        'center': leftEyeMid}
-                self.__features['Right_eye'] = {'rotation': rightEyeAngle, 'width': rightEyeW, 'height': rightEyeH,
-                                                        'center': rightEyeMid}
                 self.__features['Hat'] = {'rotation': hatAngle, 'center': hatCenter}
 
                 # Find the face orientation if requested by the user
@@ -144,15 +171,11 @@ class FeatureExtractor:
                         pos = 'center'
 
                     # Update the features dictionary
-                    self.__features['Face_ori'] = {'Face_orientation': pos}
+                    self.__features['Face'] = {'orientation': pos}
 
                 if extractMouth:
-                    mouthW = self.__calcDistance(landmarks[61], landmarks[291], width, height)  # Width
-                    mouthH = self.__calcDistance(landmarks[0], landmarks[17], width, height)  # Height
-                    mouthCenter = self.__midpoint(landmarks[13], landmarks[14], width, height)  # Center
-
                     # Update the features dictionary
-                    self.__features['Mouth'] = {'Center': mouthCenter, 'width': mouthW, 'height': mouthH}
+                    self.__features['Mouth'] = self.__calc(landmarks, "mouth", (height, width))
 
                 counter += 1
             
@@ -176,49 +199,59 @@ class FeatureExtractor:
 
             for image in images:
                 # Resize image
-                image = self.__resizeImage(image)
+                # image = self.__resizeImage(image)
 
                 output_image = image.copy()
 
-                segmentation_output = prs.parse_face(image)[0]
+                segmentation_output = prs.parse_face(image[..., ::-1])[0]
+                
+                binary_mask = np.full(shape=[segmentation_output.shape[0], segmentation_output.shape[1]], fill_value=255, dtype=np.uint8)
+                binary_mask[segmentation_output==17] = 0 # HAIR
+                binary_mask[segmentation_output==16] = 0 # CLOTHES
+                binary_mask[segmentation_output==15] = 0 # ??
+                binary_mask[segmentation_output==14] = 0 # NECK
+                binary_mask[segmentation_output==0] = 0 # BACKGROUND
 
-                binary_mask = np.ones(shape=[segmentation_output.shape[0],segmentation_output.shape[1]]) * 255
-                binary_mask[segmentation_output==16] = 0
-                binary_mask[segmentation_output==15] = 0
-                binary_mask[segmentation_output==14] = 0
-                binary_mask[segmentation_output==0] = 0
+                # Enlarge the mask
+                dilatation_size = 3
+                dilatation_type = cv2.MORPH_CROSS
+                element = cv2.getStructuringElement(dilatation_type,(2*dilatation_size + 1, 2*dilatation_size+1),(dilatation_size, dilatation_size))
+                binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_CLOSE, element)
+
+                binary_mask[segmentation_output==17] = 255 # HAIR
+                binary_mask = self.singleContourMask(binary_mask)
+
+                # apply smoothing to the mask
+                blur_level = 2
+                binary_mask = cv2.blur(binary_mask, (blur_level, blur_level))
 
                 # blur alpha channel
                 binary_mask = cv2.GaussianBlur(binary_mask, (0,0), sigmaX=2, sigmaY=2, borderType = cv2.BORDER_DEFAULT)
-
-                # stretch so that 255 -> 255 and 127.5 -> 0
-                # binary_mask = skimage.exposure.rescale_intensity(binary_mask, in_range=(127.5, 255), out_range=(0,255))
-
-                output_image[binary_mask<127.5] = 255
+                
+                output_image[binary_mask<(255*(1-SEGMENT_CONF))] = 255
 
                 faces.append(np.dstack((output_image, binary_mask)))
-                # greyscale = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
-            K.clear_session()    
+            K.clear_session()
             return faces
-        except:
+        except Exception as e:
+            # print(e)
             K.clear_session() 
 
     # Segments all faces detected
     def segmentFace(self, image):
-        # image = cv2.imread(input)[..., ::-1]
-        
-        # Get the height and width of the input image.
         try:
+            # Get the height and width of the input image.
             image_height, image_width, _ = image.shape
 
             cropped_images = []
 
             mp_face_detection = mediapipe.solutions.face_detection
-            mp_face_detector = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=0.7)
+            mp_face_detector = mp_face_detection.FaceDetection(model_selection=1, min_detection_confidence=MIN_CONF_FACE)
 
             # Perform the face detection on the image.
-            results = mp_face_detector.process(image)
+            results = mp_face_detector.process(image[..., ::-1])
 
+            croppedFaces = []
             # Check if the face(s) in the image are found.
             if results.detections:
 
@@ -253,15 +286,21 @@ class FeatureExtractor:
 
                     if y2 > image_height:
                         x2 = image_height
-
-                    # Crop the detected face region.
-                    face_crop = image[y1:y2, x1:x2].copy()
+                    
+                    face_crop = image[y1:y2, x1:x2]
                     cropped_images.append(face_crop)
                 
                 croppedFaces = self.__detectFace(cropped_images)
+                # for i, face in enumerate(croppedFaces):
+                #     color = [255, 255, 255]
+                #     delta_w = image_width - face.shape[1]
+                #     delta_h = image_height - face.shape[0]
+                #     croppedFaces[i] = cv2.copyMakeBorder(face, 0, delta_h, 0, delta_w, cv2.BORDER_CONSTANT,
+                #         value=color)
             K.clear_session()
             return croppedFaces
-        except:
+        except Exception as e:
+            # print(e)
             K.clear_session()    
 
 
