@@ -6,7 +6,8 @@ import numpy as np
 import cv2
 from urllib.request import urlopen, Request
 import os
-from config import WRITE_PATH, IMG_PATH, FEATURES_PATH, PORT_NUM
+from config import WRITE_PATH, IMG_PATH, FEATURES_PATH, PORT_NUM, LOG_FILE
+import logging
 
 # Create a Flask app
 app = Flask(__name__, static_url_path = "/static", static_folder = "static")
@@ -55,7 +56,7 @@ def get_features():
             'data': features}
         return data, 200  # return data with 200 OK
     except Exception as e:
-        # print(e)
+        logging.exception(e)
         return "Error"
 
 
@@ -92,24 +93,17 @@ def segment():
         data = {'data':json_arr}
         return data, 200
     except Exception as e:
-        print(e)
+        logging.exception(e)
         return "Error"
 
 
 # Filters class to use for creating filters endpoint
 @app.route('/mask/filter')
 def get():
+    logging.debug('Called Endpoint: /mask/filter')
     try:
         iimage = request.args.get('image')
         fiilter = request.args.get('filter')
-        # parser = reqparse.RequestParser()  # initialize
-        
-        # parser.add_argument('image', required=True)  # add args
-        # parser.add_argument('filter', required=True)
-        
-        # args = parser.parse_args()  # parse arguments to dictionary
-        # nparr = np.fromstring(iimage, np.uint8)
-        # image = cv2.imdecode(nparr, cv2.IMREAD_ANYCOLOR)
         req = Request(iimage, headers={'User-Agent': 'Mozilla/5.0'})
         requested_url = urlopen(req)
         
@@ -136,31 +130,42 @@ def get():
             'filtered_photo': return_path}
         return data, 200  # return data with 200 OK
     except Exception as e:
-        # print(e)
+        logging.exception(e)
         return "Error"
 
 
 # Image endpoint
 @app.route('/mask/image')
 def display_img():
+    logging.debug('Called Endpoint: /mask/image')
     try:
         img = request.args.get('img')
-        # parser = reqparse.RequestParser()  # initialize
-        
-        # parser.add_argument('img', required=True)  # add args
-        
-        # args = parser.parse_args()  # parse arguments to dictionary
-
         # Return the html displaying the input image
         return render_template("index.html", user_image = img)
     except Exception as e:
-        # print(e)
+        logging.exception(e)
         return "Error"
 
-
+# Log Endpoint
+@app.route('/mask/log')
+def view_log():
+    logging.debug('Called Endpoint: /mask/log')
+    try:
+        # read the log file
+        log = open(LOG_FILE, 'r')
+        log_data = log.read()
+        return log_data
+    except Exception as e:
+        logging.exception(e)
+        return "Error"
 
 if __name__ == '__main__':
     #create static/output dir if not already exists
     if not os.path.exists(WRITE_PATH):
         os.makedirs(WRITE_PATH)
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
+    logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG)    
+    logging.info('Starting Server...')
     app.run(host='0.0.0.0', port=PORT_NUM, debug=False)  # run our Flask app
+    logging.info('Server Started...')

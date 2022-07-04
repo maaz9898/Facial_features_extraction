@@ -20,3 +20,6 @@ MIN_CONF_FACE = 0.5
 COMPRESS_PCT = 0.3
 
 SEGMENT_CONF = 0.8
+
+
+LOG_FILE = "./history.log"
