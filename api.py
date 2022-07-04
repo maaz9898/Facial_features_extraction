@@ -5,10 +5,11 @@ from filter import applyFilter
 import numpy as np
 import cv2
 from urllib.request import urlopen, Request
+import os
 from config import WRITE_PATH, IMG_PATH, FEATURES_PATH, PORT_NUM
+
 # Create a Flask app
 app = Flask(__name__, static_url_path = "/static", static_folder = "static")
-
 
 # Create an API using Flask app
 api = Api(app)
@@ -159,4 +160,7 @@ def display_img():
 
 
 if __name__ == '__main__':
+    #create static/output dir if not already exists
+    if not os.path.exists(WRITE_PATH):
+        os.makedirs(WRITE_PATH)
     app.run(host='0.0.0.0', port=PORT_NUM, debug=False)  # run our Flask app
