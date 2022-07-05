@@ -9,7 +9,6 @@ import os
 from config import WRITE_PATH, IMG_PATH, FEATURES_PATH, PORT_NUM, LOG_FILE
 import logging
 from utils.helper import read_image_from_url, extract_image_name
-
 # Create a Flask app
 app = Flask(__name__, static_url_path = "/static", static_folder = "static")
 
