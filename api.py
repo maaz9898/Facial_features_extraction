@@ -21,11 +21,8 @@ def get_features():
         iimage = request.args.get('image')
         scale = request.args.get('scale')
 
-        req = Request(iimage, headers={'User-Agent': 'Mozilla/5.0'})
-        requested_url = urlopen(req)
+        image = read_image_from_url(iimage)
         
-        image_array = np.asarray(bytearray(requested_url.read()), dtype=np.uint8)
-        image = cv2.imdecode(image_array, -1)
         iimage = iimage.replace("?", "a")
         iimage = iimage.replace("=", "b")
         if ('png' not in iimage and'jpg' not in iimage):
@@ -65,11 +62,7 @@ def segment():
     try:
         iimage = request.args.get('image')
 
-        req = Request(iimage, headers={'User-Agent': 'Mozilla/5.0'})
-        requested_url = urlopen(req)
-        
-        image_array = np.asarray(bytearray(requested_url.read()), dtype=np.uint8)
-        image = cv2.imdecode(image_array, -1)
+        image = read_image_from_url(iimage)
 
         iimage = iimage.replace("?", "a")
         iimage = iimage.replace("=", "b")
@@ -104,11 +97,8 @@ def get():
     try:
         iimage = request.args.get('image')
         fiilter = request.args.get('filter')
-        req = Request(iimage, headers={'User-Agent': 'Mozilla/5.0'})
-        requested_url = urlopen(req)
         
-        image_array = np.asarray(bytearray(requested_url.read()), dtype=np.uint8)
-        image = cv2.imdecode(image_array, -1)
+        image = read_image_from_url(iimage)
 
         iimage = iimage.replace("?", "a")
         iimage = iimage.replace("=", "b")
@@ -169,3 +159,11 @@ if __name__ == '__main__':
     logging.info('Starting Server...')
     app.run(host='0.0.0.0', port=PORT_NUM, debug=False)  # run our Flask app
     logging.info('Server Started...')
+
+
+def read_image_from_url(url:str):
+    req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+    requested_url = urlopen(req)
+    image_array = np.asarray(bytearray(requested_url.read()), dtype=np.uint8)
+    image = cv2.imdecode(image_array, -1)
+    return image
