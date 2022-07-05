@@ -10,7 +10,7 @@ import logging
 from utils.helper import read_image_from_url, extract_image_name
 
 def create_app():
-    logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG, force=True)
+    logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG, force=True, encoding = 'utf-8')
     print("Log stored at: " + logging.getLoggerClass().root.handlers[0].baseFilename)
     #create static/output dir if not already exists
     if not os.path.exists(WRITE_PATH):
