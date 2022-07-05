@@ -4,6 +4,7 @@ import numpy as np
 from models.parser import face_parser
 from tensorflow.compat.v1.keras import backend as K
 from config import MIN_CONF, MIN_CONF_FACE, COMPRESS_PCT, SEGMENT_CONF
+import logging
 
 "A class that encapsulates all functionalities needed"
 class FeatureExtractor:
@@ -128,58 +129,61 @@ class FeatureExtractor:
 
         Hat Center --> 10
         """
-        # Call the processImg() method
-        height, width, _ = self.__processImg(compress)
+        try:
+            # Call the processImg() method
+            height, width, _ = self.__processImg(compress)
 
-        height, width = self.img.shape[:2]
-        # Proceed if face landmarks are detected
-        if self.__results.multi_face_landmarks != None:
-            counter = 0  # Keeps track of number of faces
-            
-            for facial_landmarks in self.__results.multi_face_landmarks:
-                landmarks = facial_landmarks.landmark
-                # Update the features dictionary
-                self.__features['Left_eye'] = self.__calc(landmarks, "left_eye", (height, width))
-                self.__features['Right_eye'] = self.__calc(landmarks, "right_eye", (height, width))
+            height, width = self.img.shape[:2]
+            # Proceed if face landmarks are detected
+            if self.__results.multi_face_landmarks != None:
+                counter = 0  # Keeps track of number of faces
+                
+                for facial_landmarks in self.__results.multi_face_landmarks:
+                    landmarks = facial_landmarks.landmark
+                    # Update the features dictionary
+                    self.__features['Left_eye'] = self.__calc(landmarks, "left_eye", (height, width))
+                    self.__features['Right_eye'] = self.__calc(landmarks, "right_eye", (height, width))
 
-                """ Hat Attributes """
-                hatCenterX = int((landmarks[10].x) * width)
-                hatCenterY = int((landmarks[10].y) * height)
-                hatCenter = [hatCenterX, hatCenterY]  # Center
-                hatAngle = round((np.degrees(np.arctan2(hatCenterX, hatCenterY)) - 180))  # Rotation Angle
-                # Update the features dictionary
-                self.__features['Hat'] = {'rotation': hatAngle, 'center': hatCenter}
+                    """ Hat Attributes """
+                    hatCenterX = int((landmarks[10].x) * width)
+                    hatCenterY = int((landmarks[10].y) * height)
+                    hatCenter = [hatCenterX, hatCenterY]  # Center
+                    hatAngle = round((np.degrees(np.arctan2(hatCenterX, hatCenterY)) - 180))  # Rotation Angle
+                    # Update the features dictionary
+                    self.__features['Hat'] = {'rotation': hatAngle, 'center': hatCenter}
 
-                # Find the face orientation if requested by the user
-                if faceOrient:
-                    faceLeftPt = [int((landmarks[93].x) * width), int((landmarks[93].y) * height)]
-                    faceRightPt = [int((landmarks[323].x) * width), int((landmarks[323].y) * height)]
-                    faceCenterPt = [int((landmarks[5].x) * width), int((landmarks[5].y) * height)]
-                    
-                    left2cen_dis = int(self.__euclideanDistance(faceLeftPt[0], faceLeftPt[1], faceCenterPt[0], faceCenterPt[1]))  # Left to center margin
-                    right2cen_dis = int(self.__euclideanDistance(faceRightPt[0], faceRightPt[1], faceCenterPt[0], faceCenterPt[1]))  # Right to center margin
+                    # Find the face orientation if requested by the user
+                    if faceOrient:
+                        faceLeftPt = [int((landmarks[93].x) * width), int((landmarks[93].y) * height)]
+                        faceRightPt = [int((landmarks[323].x) * width), int((landmarks[323].y) * height)]
+                        faceCenterPt = [int((landmarks[5].x) * width), int((landmarks[5].y) * height)]
+                        
+                        left2cen_dis = int(self.__euclideanDistance(faceLeftPt[0], faceLeftPt[1], faceCenterPt[0], faceCenterPt[1]))  # Left to center margin
+                        right2cen_dis = int(self.__euclideanDistance(faceRightPt[0], faceRightPt[1], faceCenterPt[0], faceCenterPt[1]))  # Right to center margin
 
-                    diff = abs(left2cen_dis - right2cen_dis)  # Margins difference
-                    if diff > 10:
-                        if left2cen_dis < right2cen_dis:
-                            pos = 'Left'
-                        elif left2cen_dis > right2cen_dis:
-                            pos = 'right'
+                        diff = abs(left2cen_dis - right2cen_dis)  # Margins difference
+                        if diff > 10:
+                            if left2cen_dis < right2cen_dis:
+                                pos = 'Left'
+                            elif left2cen_dis > right2cen_dis:
+                                pos = 'right'
+                            else:
+                                pos = 'center'
                         else:
                             pos = 'center'
-                    else:
-                        pos = 'center'
 
-                    # Update the features dictionary
-                    self.__features['Face'] = {'orientation': pos}
+                        # Update the features dictionary
+                        self.__features['Face'] = {'orientation': pos}
 
-                if extractMouth:
-                    # Update the features dictionary
-                    self.__features['Mouth'] = self.__calc(landmarks, "mouth", (height, width))
+                    if extractMouth:
+                        # Update the features dictionary
+                        self.__features['Mouth'] = self.__calc(landmarks, "mouth", (height, width))
 
-                counter += 1
-            
-            return self.__features
+                    counter += 1
+                
+                return self.__features
+        except Exception as e:
+            logging.exception(f"Exception in extractFeatures:\n{e}")
 
 
     # Helper function
@@ -234,7 +238,7 @@ class FeatureExtractor:
             K.clear_session()
             return faces
         except Exception as e:
-            # print(e)
+            logging.exception(f"Exception in detectFace:\n{e}")
             K.clear_session() 
 
     # Segments all faces detected
@@ -300,24 +304,25 @@ class FeatureExtractor:
             K.clear_session()
             return croppedFaces
         except Exception as e:
-            # print(e)
-            K.clear_session()    
+            logging.exception(f"Exception in segmentFace:\n{e}")
+            K.clear_session()
 
 
     # Upscales the image using super resolution
     def upscale(self, scalar):
-        scaling_dict = {'2': "models/EDSR_x2.pb", '4': "models/EDSR_x4.pb"}  # A dict to select the appropriate model
+        try:
+            scaling_dict = {'2': "models/EDSR_x2.pb", '4': "models/EDSR_x4.pb"}  # A dict to select the appropriate model
+            sr = cv2.dnn_superres.DnnSuperResImpl_create()  # SR opencv object
+            path = scaling_dict[scalar]
 
-        sr = cv2.dnn_superres.DnnSuperResImpl_create()  # SR opencv object
+            # Read and set the selected model
+            sr.readModel(path)
+            sr.setModel("edsr", int(scalar))
 
-        path = scaling_dict[scalar]
-
-        # Read and set the selected model
-        sr.readModel(path)
-        sr.setModel("edsr", int(scalar))
-
-        # Upscales the input image
-        copiedImg = self.img.copy()
-        result = sr.upsample(copiedImg)
-
-        return result
+            # Upscales the input image
+            copiedImg = self.img.copy()
+            result = sr.upsample(copiedImg)
+            return result
+        except Exception as e:
+            logging.exception(f"Exception in upscale:\n{e}")
+            K.clear_session()
