@@ -4,13 +4,24 @@ from utils.FeatureExtractor import FeatureExtractor
 from filter import applyFilter
 import numpy as np
 import cv2
-from urllib.request import urlopen, Request
 import os
 from config import WRITE_PATH, IMG_PATH, FEATURES_PATH, PORT_NUM, LOG_FILE
 import logging
 from utils.helper import read_image_from_url, extract_image_name
+
+def create_app():
+    logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG, force=True)
+    print("Log stored at: " + logging.getLoggerClass().root.handlers[0].baseFilename)
+    #create static/output dir if not already exists
+    if not os.path.exists(WRITE_PATH):
+        logging.info('Creating output folder')
+        os.makedirs(WRITE_PATH)
+    logging.info('Starting Flask Server')
+    app = Flask(__name__, static_url_path = "/static", static_folder = "static")
+    return app
+
 # Create a Flask app
-app = Flask(__name__, static_url_path = "/static", static_folder = "static")
+app = create_app()
 
 # Create an API using Flask app
 api = Api(app)
@@ -130,19 +141,12 @@ def view_log():
         # read the log file
         log = open(LOG_FILE, 'r')
         log_data = log.read()
-        return log_data
+        return render_template("log.html", text = log_data)
+    
     except Exception as e:
         logging.exception(f"Exception in /mask/log: {e}")
         return "Error"
 
 if __name__ == '__main__':
-    for handler in logging.root.handlers[:]:
-        logging.root.removeHandler(handler)
-    logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG)
-    #create static/output dir if not already exists
-    if not os.path.exists(WRITE_PATH):
-        logging.info('Creating output folder')
-        os.makedirs(WRITE_PATH)
-    logging.info('Starting Flask Server')
-    app.run(host='0.0.0.0', port=PORT_NUM, debug=False)  # run our Flask app
-    logging.info('Server Started')
+    app.run(host='0.0.0.0', port=PORT_NUM, debug=True)  # run Flask app
+    
