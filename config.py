@@ -5,7 +5,7 @@ PORT_NUM = 5001
 WRITE_PATH = './static/output/'
 
 # Image endpoint URL
-IMG_PATH = f'{BASE_URL}:{PORT_NUM}/static/output/'
+IMG_PATH = f'{BASE_URL}/static/output/'
 
 # Features endpoint URL
 FEATURES_PATH = f'{BASE_URL}/mask/features?image={BASE_URL}/static/output/'
