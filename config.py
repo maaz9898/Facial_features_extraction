@@ -21,5 +21,4 @@ COMPRESS_PCT = 0.3
 
 SEGMENT_CONF = 0.8
 
-
 LOG_FILE = "./history.log"
