@@ -8,6 +8,7 @@ from urllib.request import urlopen, Request
 import os
 from config import WRITE_PATH, IMG_PATH, FEATURES_PATH, PORT_NUM, LOG_FILE
 import logging
+from utils.helper import read_image_from_url, extract_image_name
 
 # Create a Flask app
 app = Flask(__name__, static_url_path = "/static", static_folder = "static")
@@ -48,7 +49,7 @@ def get_features():
             'data': features}
         return data, 200  # return data with 200 OK
     except Exception as e:
-        logging.exception(f"Exception in /mask/features:\n{imageUrl}\n{e}")
+        logging.exception(f"Exception in /mask/features: {imageUrl}\n{e}")
         return "Error"
 
 
@@ -77,7 +78,7 @@ def segment():
         data = {'data':json_arr}
         return data, 200
     except Exception as e:
-        logging.exception(f"Exception in /mask/segment:\n{imageUrl}\n{e}")
+        logging.exception(f"Exception in /mask/segment: {imageUrl}\n{e}")
         return "Error"
 
 
@@ -93,7 +94,7 @@ def get():
         iimage = extract_image_name(imageUrl)
         
         # Apply selected filter
-        filteredImg = applyFilter(image,fiilter)
+        filteredImg = applyFilter(image, fiilter)
 
         # Create write path and URL
         out_path = WRITE_PATH + fiilter + '_' + iimage
@@ -106,7 +107,7 @@ def get():
             'filtered_photo': return_path}
         return data, 200  # return data with 200 OK
     except Exception as e:
-        logging.exception(f"Exception in /mask/filter:\n{imageUrl}\n{e}")
+        logging.exception(f"Exception in /mask/filter: {imageUrl}\n{e}")
         return "Error"
 
 
@@ -119,7 +120,7 @@ def display_img():
         # Return the html displaying the input image
         return render_template("index.html", user_image = imageUrl)
     except Exception as e:
-        logging.exception(f"Exception in /mask/image:\n{imageUrl}\n{e}")
+        logging.exception(f"Exception in /mask/image: {imageUrl}\n{e}")
         return "Error"
 
 # Log Endpoint
@@ -146,17 +147,3 @@ if __name__ == '__main__':
     logging.info('Starting Flask Server')
     app.run(host='0.0.0.0', port=PORT_NUM, debug=False)  # run our Flask app
     logging.info('Server Started')
-
-
-def read_image_from_url(url:str):
-    req = Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-    requested_url = urlopen(req)
-    image_array = np.asarray(bytearray(requested_url.read()), dtype=np.uint8)
-    image = cv2.imdecode(image_array, -1)
-    return image
-
-def extract_image_name(url:str):
-    imageName = url.replace("?", "a").replace("=", "b")
-    if ('png' not in imageName and 'jpg' not in imageName):
-            imageName=imageName+'.png'
-    return imageName.split('/')[-1]
