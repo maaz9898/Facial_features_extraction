@@ -18,17 +18,12 @@ api = Api(app)
 @app.route('/mask/features')
 def get_features():
     try:
-        iimage = request.args.get('image')
+        imageUrl = request.args.get('image')
         scale = request.args.get('scale')
 
-        image = read_image_from_url(iimage)
-        
-        iimage = iimage.replace("?", "a")
-        iimage = iimage.replace("=", "b")
-        if ('png' not in iimage and'jpg' not in iimage):
-            iimage=iimage+'.png'
+        image = read_image_from_url(imageUrl)
+        iimage = extract_image_name(imageUrl)
 
-        # image = cv2.imread(iimage)  # Read the input image
         FExtractor = FeatureExtractor(image)  # Create a FeatureExtractor object
 
         out_path = WRITE_PATH
@@ -42,8 +37,8 @@ def get_features():
             return_path += 'upscaled_'
         
         # Create write path and URL
-        out_path += iimage.split('/')[-1]
-        return_path += iimage.split('/')[-1]
+        out_path += iimage
+        return_path += iimage
             
         features = FExtractor.extractFeatures()  # Call the extractFeatures() method
         cv2.imwrite(out_path, image)
@@ -53,28 +48,24 @@ def get_features():
             'data': features}
         return data, 200  # return data with 200 OK
     except Exception as e:
-        logging.exception(e)
+        logging.exception(f"Exception in /mask/features:\n{imageUrl}\n{e}")
         return "Error"
 
 
 @app.route('/mask/segment')
 def segment():
     try:
-        iimage = request.args.get('image')
+        imageUrl = request.args.get('image')
 
-        image = read_image_from_url(iimage)
-
-        iimage = iimage.replace("?", "a")
-        iimage = iimage.replace("=", "b")
-        if ('png' not in iimage and 'jpg' not in iimage):
-                iimage=iimage+'.png'
+        image = read_image_from_url(imageUrl)
+        iimage = extract_image_name(imageUrl)
         
         FExtractor = FeatureExtractor(image)  
         
         faces = FExtractor.segmentFace(image)  # Create a FeatureExtractor object
         json_arr = []
         for i,face_image in enumerate(faces):
-            fname = f"_{str(i)}_{iimage.split('/')[-1]}"
+            fname = f"_{str(i)}_{iimage}"
             out_path = f"{WRITE_PATH}{fname}"
             return_path = f"{IMG_PATH}{fname}"
             cv2.imwrite(out_path, face_image)
@@ -86,7 +77,7 @@ def segment():
         data = {'data':json_arr}
         return data, 200
     except Exception as e:
-        logging.exception(e)
+        logging.exception(f"Exception in /mask/segment:\n{imageUrl}\n{e}")
         return "Error"
 
 
@@ -95,23 +86,18 @@ def segment():
 def get():
     logging.debug('Called Endpoint: /mask/filter')
     try:
-        iimage = request.args.get('image')
+        imageUrl = request.args.get('image')
         fiilter = request.args.get('filter')
         
-        image = read_image_from_url(iimage)
-
-        iimage = iimage.replace("?", "a")
-        iimage = iimage.replace("=", "b")
-        if ('png' not in iimage and'jpg' not in iimage):
-                iimage=iimage+'.png'
-        
+        image = read_image_from_url(imageUrl)
+        iimage = extract_image_name(imageUrl)
         
         # Apply selected filter
         filteredImg = applyFilter(image,fiilter)
 
         # Create write path and URL
-        out_path = WRITE_PATH + fiilter + '_' + iimage.split('/')[-1]
-        return_path = IMG_PATH + fiilter + '_' + iimage.split('/')[-1]
+        out_path = WRITE_PATH + fiilter + '_' + iimage
+        return_path = IMG_PATH + fiilter + '_' + iimage
 
         cv2.imwrite(out_path, filteredImg)
 
@@ -120,7 +106,7 @@ def get():
             'filtered_photo': return_path}
         return data, 200  # return data with 200 OK
     except Exception as e:
-        logging.exception(e)
+        logging.exception(f"Exception in /mask/filter:\n{imageUrl}\n{e}")
         return "Error"
 
 
@@ -129,11 +115,11 @@ def get():
 def display_img():
     logging.debug('Called Endpoint: /mask/image')
     try:
-        img = request.args.get('img')
+        imageUrl = request.args.get('image')
         # Return the html displaying the input image
-        return render_template("index.html", user_image = img)
+        return render_template("index.html", user_image = imageUrl)
     except Exception as e:
-        logging.exception(e)
+        logging.exception(f"Exception in /mask/image:\n{imageUrl}\n{e}")
         return "Error"
 
 # Log Endpoint
@@ -146,19 +132,20 @@ def view_log():
         log_data = log.read()
         return log_data
     except Exception as e:
-        logging.exception(e)
+        logging.exception(f"Exception in /mask/log: {e}")
         return "Error"
 
 if __name__ == '__main__':
-    #create static/output dir if not already exists
-    if not os.path.exists(WRITE_PATH):
-        os.makedirs(WRITE_PATH)
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
-    logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG)    
-    logging.info('Starting Server...')
+    logging.basicConfig(filename=LOG_FILE, level=logging.DEBUG)
+    #create static/output dir if not already exists
+    if not os.path.exists(WRITE_PATH):
+        logging.info('Creating output folder')
+        os.makedirs(WRITE_PATH)
+    logging.info('Starting Flask Server')
     app.run(host='0.0.0.0', port=PORT_NUM, debug=False)  # run our Flask app
-    logging.info('Server Started...')
+    logging.info('Server Started')
 
 
 def read_image_from_url(url:str):
@@ -167,3 +154,9 @@ def read_image_from_url(url:str):
     image_array = np.asarray(bytearray(requested_url.read()), dtype=np.uint8)
     image = cv2.imdecode(image_array, -1)
     return image
+
+def extract_image_name(url:str):
+    imageName = url.replace("?", "a").replace("=", "b")
+    if ('png' not in imageName and 'jpg' not in imageName):
+            imageName=imageName+'.png'
+    return imageName.split('/')[-1]
